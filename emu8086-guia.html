@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>emu8086 · Aprende ensamblador 8086 en tu navegador</title>
+<style>
+:root{
+  --bg:#060a07; --bg2:#0a100b; --panel:#0c130d; --panel2:#101a11; --line:#1d3a21; --line2:#2a5530;
+  --green:#39ff6a; --green-d:#22b84a; --green-dim:#6fa77a; --amber:#ffb000; --amber-d:#b87d00;
+  --text:#cfe8d2; --dim:#7fa086; --red:#ff5f56; --blue:#59b7ff;
+  --mono:ui-monospace,"JetBrains Mono","Cascadia Mono","Fira Code",SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  --ed-fs:13px; --ed-lh:20px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:15px;line-height:1.7;
+  background-image:radial-gradient(1200px 600px at 80% -10%,rgba(57,255,106,.08),transparent 60%),radial-gradient(900px 500px at -10% 30%,rgba(255,176,0,.05),transparent 60%);
+  background-attachment:fixed}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:100;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.13) 3px);mix-blend-mode:multiply}
+::selection{background:rgba(57,255,106,.3);color:#fff}
+a{color:var(--amber);text-underline-offset:3px}
+a:hover{color:#ffd166}
+h1,h2,h3,h4{font-weight:700;line-height:1.25;margin:0}
+p{margin:0 0 1em}
+code,kbd,.m{font-family:var(--mono)}
+code{background:rgba(57,255,106,.09);color:var(--green);padding:.05em .4em;border-radius:3px;font-size:.92em}
+kbd{display:inline-block;border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;padding:0 .4em;font-size:.78em;color:var(--amber);background:#0a100b;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.wide{max-width:1320px}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:50;background:rgba(6,10,7,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:18px;height:52px}
+.brand{color:var(--green);font-weight:700;white-space:nowrap;text-shadow:0 0 10px rgba(57,255,106,.5);text-decoration:none}
+.brand span{color:var(--amber)}
+.nav ul{display:flex;gap:4px;list-style:none;margin:0;padding:0;overflow-x:auto;scrollbar-width:none}
+.nav ul::-webkit-scrollbar{display:none}
+.nav a.lk{display:block;padding:6px 10px;border-radius:4px;color:var(--dim);text-decoration:none;font-size:13px;white-space:nowrap;border:1px solid transparent}
+.nav a.lk:hover{color:var(--text);border-color:var(--line)}
+.nav a.lk.on{color:#04110a;background:var(--green);font-weight:700}
+
+/* HERO */
+.hero{padding:64px 0 40px}
+.term{border:1px solid var(--line2);border-radius:8px;background:#050806;box-shadow:0 0 0 1px #000,0 0 40px rgba(57,255,106,.08)}
+.term-bar{display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:#2a3b2d;display:inline-block}
+.term-bar i:nth-child(1){background:#ff5f56}.term-bar i:nth-child(2){background:#ffbd2e}.term-bar i:nth-child(3){background:#27c93f}
+.term-bar span{margin-left:8px}
+.term-body{padding:20px 22px;font-size:14px;min-height:150px}
+.term-body .pr{color:var(--green)}
+.term-body .am{color:var(--amber)}
+.term-body .dm{color:var(--dim)}
+.cursor{display:inline-block;width:.6em;height:1.05em;background:var(--green);vertical-align:-.15em;animation:blink 1.05s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.hero h1{font-size:clamp(28px,5vw,50px);margin:28px 0 14px;color:var(--green);text-shadow:0 0 18px rgba(57,255,106,.45)}
+.hero h1 em{font-style:normal;color:var(--amber);text-shadow:0 0 18px rgba(255,176,0,.4)}
+.hero .lead{max-width:68ch;font-size:16.5px;color:var(--text)}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{border:1px solid var(--line2);border-radius:999px;padding:3px 12px;font-size:12px;color:var(--green-dim)}
+
+/* BUTTONS */
+.btn{font:inherit;font-size:13px;cursor:pointer;border:1px solid var(--green-d);color:var(--green);background:transparent;padding:8px 14px;border-radius:5px;
+  display:inline-flex;align-items:center;gap:8px;text-decoration:none;line-height:1.2;transition:background .15s,box-shadow .15s,color .15s}
+.btn:hover:not(:disabled){background:rgba(57,255,106,.12);box-shadow:0 0 14px rgba(57,255,106,.25);color:#7dffa0}
+.btn:focus-visible,.tab:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btn.primary{background:var(--green);color:#03120a;font-weight:700}
+.btn.primary:hover:not(:disabled){background:#6dff92;color:#03120a}
+.btn.amber{border-color:var(--amber-d);color:var(--amber)}
+.btn.amber:hover:not(:disabled){background:rgba(255,176,0,.12);box-shadow:0 0 14px rgba(255,176,0,.25);color:#ffcf66}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn kbd{margin-left:2px}
+
+/* SECTIONS */
+.sec{padding:56px 0 20px;border-top:1px dashed var(--line)}
+.sec-h{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.sec-h .idx{color:var(--amber);font-size:14px;border:1px solid var(--amber-d);border-radius:4px;padding:0 8px}
+.sec-h h2{font-size:clamp(22px,3.4vw,32px);color:var(--green);text-shadow:0 0 14px rgba(57,255,106,.35)}
+.sec-intro{max-width:74ch;color:var(--text);margin-bottom:26px}
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:8px;padding:20px}
+.card h3{font-size:17px;color:var(--amber);margin-bottom:10px}
+.card h3 .pre{color:var(--green)}
+.card ul{margin:0;padding-left:1.2em}
+.card li{margin:.35em 0}
+.card li::marker{color:var(--green)}
+
+/* register map */
+.regmap{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:6px 0 4px}
+.rg{border:1px solid var(--line2);border-radius:5px;padding:7px 9px;background:#070c08;font-size:12px}
+.rg b{color:var(--green);font-size:14px}
+.rg .hl{display:flex;margin:5px 0 3px}
+.rg .hl span{flex:1;text-align:center;border:1px solid var(--amber-d);color:var(--amber);font-size:11px;padding:1px 0}
+.rg .hl span+span{border-left:0}
+.rg small{color:var(--dim);display:block;line-height:1.35}
+
+/* widgets */
+.widget{border:1px solid var(--line2);border-radius:8px;background:#070c08;padding:16px}
+.widget h4{color:var(--amber);font-size:14px;margin-bottom:10px}
+.widget label{font-size:12px;color:var(--dim);display:inline-block;margin-right:8px}
+.fld{font:inherit;font-size:14px;background:#030604;border:1px solid var(--line2);color:var(--green);border-radius:4px;padding:5px 8px;width:7.5em;text-transform:uppercase}
+select.fld{width:auto;text-transform:none}
+.outs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.out{border:1px solid var(--line);border-radius:4px;padding:5px 10px;font-size:13px;background:#050806}
+.out b{color:var(--green)}
+.out.flag.on{border-color:var(--amber);color:var(--amber);box-shadow:0 0 10px rgba(255,176,0,.3)}
+.bits{display:flex;gap:2px;margin-top:10px;flex-wrap:wrap}
+.bits span{width:1.35em;text-align:center;border:1px solid var(--line);font-size:13px;color:var(--dim);padding:1px 0}
+.bits span.on{color:#03120a;background:var(--green);border-color:var(--green)}
+.bits span.gap{margin-left:8px}
+.note{font-size:12.5px;color:var(--dim);margin-top:10px}
+
+/* steps */
+.steps{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.step{position:relative;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:8px;padding:20px 20px 18px 20px;transition:border-color .2s}
+.step.done{border-color:var(--green-d)}
+.step .num{position:absolute;top:-14px;left:16px;background:var(--bg);color:var(--amber);border:1px solid var(--amber-d);border-radius:4px;padding:0 10px;font-weight:700;font-size:15px}
+.step h3{font-size:17px;color:var(--green);margin:6px 0 8px}
+.step p{font-size:14px}
+.step .tick{margin-top:8px;font:inherit;font-size:12px;background:none;border:1px dashed var(--line2);color:var(--dim);padding:4px 10px;border-radius:4px;cursor:pointer}
+.step .tick:hover{color:var(--green);border-color:var(--green-d)}
+.step.done .tick{color:var(--green);border-style:solid}
+.progress{height:8px;border:1px solid var(--line2);border-radius:4px;overflow:hidden;margin:0 0 26px;max-width:420px}
+.progress i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--green) 0 8px,var(--green-d) 8px 10px);transition:width .3s}
+.progress-l{font-size:12px;color:var(--dim);margin-bottom:6px}
+.mock{border:1px solid var(--line2);border-radius:6px;background:#050806;margin:10px 0 12px;font-size:12px;overflow:hidden}
+.mock-bar{display:flex;gap:5px;align-items:center;padding:5px 9px;background:#0b140c;border-bottom:1px solid var(--line);color:var(--dim)}
+.mock-bar i{width:8px;height:8px;border-radius:50%;background:#2a3b2d}
+.mock-bar span{margin-left:6px}
+.mock-body{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mbtn{border:1px solid var(--line2);border-radius:3px;padding:2px 10px;color:var(--dim)}
+.mbtn.hot{border-color:var(--amber);color:var(--amber);box-shadow:0 0 10px rgba(255,176,0,.35);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 2px rgba(255,176,0,.1)}}
+.mlist{padding:8px 10px;display:grid;gap:3px}
+.mlist div{padding:1px 8px;color:var(--dim);border-radius:3px}
+.mlist .sel{background:rgba(255,176,0,.15);color:var(--amber);border:1px solid var(--amber-d)}
+.mcode{padding:8px 12px;white-space:pre;color:var(--text);overflow-x:auto}
+.mcode .c{color:#5f8a68}.mcode .k{color:var(--amber)}.mcode .n{color:var(--blue)}
+.memu{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 10px}
+.memu .r{color:var(--dim);line-height:1.5}
+.memu .r b{color:var(--green)}
+.memu .src div{padding:0 6px;color:var(--dim)}
+.memu .src .cur{background:rgba(255,176,0,.18);color:var(--amber);border-left:2px solid var(--amber)}
+.mflags{display:flex;gap:6px;padding:10px;flex-wrap:wrap}
+.mflags span{border:1px solid var(--line2);border-radius:3px;padding:1px 8px;color:var(--dim)}
+.mflags span.on{border-color:var(--amber);color:var(--amber)}
+.cmp{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.cmp th,.cmp td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+.cmp th{color:var(--amber);background:#0a120b}
+
+/* LAB */
+.lab-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px;border:1px solid var(--line2);border-radius:8px 8px 0 0;background:#08100a}
+.lab-bar .spacer{flex:1}
+.speed{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.speed select{font:inherit;font-size:12px;background:#030604;color:var(--green);border:1px solid var(--line2);border-radius:4px;padding:4px 6px}
+.runstate{font-size:12px;font-weight:700;border:1px solid var(--line2);border-radius:4px;padding:3px 10px;letter-spacing:.06em}
+.runstate.ready{color:var(--green)}
+.runstate.running{color:#03120a;background:var(--green);border-color:var(--green)}
+.runstate.wait{color:#1a1000;background:var(--amber);border-color:var(--amber)}
+.runstate.done{color:var(--blue);border-color:var(--blue)}
+.runstate.error{color:#fff;background:#b3261e;border-color:var(--red)}
+.lab-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);border:1px solid var(--line2);border-top:0;border-radius:0 0 8px 8px;overflow:hidden;background:var(--panel)}
+.pane{min-width:0;padding:14px}
+.pane+.pane{border-left:1px solid var(--line2)}
+.pane h3{font-size:13px;letter-spacing:.12em;color:var(--amber);text-transform:uppercase;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.pane h3::before{content:"▌";color:var(--green)}
+.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.tabs .grp{align-self:center;font-size:10px;letter-spacing:.14em;color:var(--dim);padding:0 6px 0 8px;white-space:nowrap}
+.tab{font:inherit;font-size:12.5px;white-space:nowrap;cursor:pointer;background:#08100a;color:var(--dim);border:1px solid var(--line);border-radius:5px 5px 0 0;padding:6px 12px}
+.tab:hover{color:var(--text);border-color:var(--line2)}
+.tab[aria-selected=true]{color:var(--green);border-color:var(--green-d);background:#0d1a0f;box-shadow:inset 0 -2px 0 var(--green)}
+.ed-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0 8px;font-size:12px;color:var(--dim)}
+.ed-head .f{color:var(--amber)}
+.ed-head .spacer{flex:1}
+.tabdesc{font-size:13px;color:var(--dim);margin:0 0 8px}
+.editor{display:grid;grid-template-columns:auto minmax(0,1fr);height:430px;border:1px solid var(--line2);border-radius:5px;background:#030604;overflow:hidden;font-family:var(--mono);font-size:var(--ed-fs);line-height:var(--ed-lh)}
+.gutter{overflow:hidden;padding:10px 0 0;background:#060b07;border-right:1px solid var(--line);color:#3d6045;text-align:right;user-select:none;min-width:3.2ch}
+.gutter div{height:var(--ed-lh);padding:0 8px 0 10px}
+.gutter div.cur{color:var(--amber);font-weight:700}
+.gutter div.err{color:#fff;background:#b3261e}
+.ed-body{position:relative;min-width:0}
+.backdrop,#code{position:absolute;inset:0;margin:0;padding:10px 12px;font:inherit;line-height:var(--ed-lh);tab-size:4;white-space:pre;letter-spacing:0;border:0}
+.backdrop{overflow:hidden;pointer-events:none;color:var(--text)}
+.backdrop .in{min-width:max-content;padding-bottom:var(--ed-lh)}
+.backdrop .ln{height:var(--ed-lh);margin:0 -12px;padding:0 12px}
+.backdrop .ln.cur{background:linear-gradient(90deg,rgba(255,176,0,.28),rgba(255,176,0,.10));box-shadow:inset 3px 0 0 var(--amber)}
+.backdrop .ln.last{background:rgba(57,255,106,.09);box-shadow:inset 3px 0 0 var(--green-d)}
+.backdrop .ln.err{background:rgba(255,95,86,.25);box-shadow:inset 3px 0 0 var(--red)}
+#code{width:100%;height:100%;resize:none;overflow:auto;background:transparent;color:transparent;caret-color:var(--green);outline:0;-webkit-text-fill-color:transparent}
+#code::selection{background:rgba(57,255,106,.28)}
+.t-c{color:#5f8a68}.t-s{color:#e6c86a}.t-r{color:var(--blue)}.t-n{color:#ff9d6e}.t-l{color:var(--amber);font-weight:700}.t-m{color:var(--green)}.t-d{color:#d98cff}
+.asm-status{min-height:1.7em;font-size:12.5px;margin-top:8px;color:var(--dim)}
+.asm-status.bad{color:var(--red)}
+.asm-status.good{color:var(--green-dim)}
+.explain{margin-top:10px;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:4px;background:#080e09;padding:10px 12px;font-size:13px;min-height:84px}
+.explain .tt{color:var(--dim);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.explain .ins{color:var(--amber);font-weight:700;margin:2px 0}
+.explain.err{border-left-color:var(--red)}
+.explain.err .ins{color:var(--red)}
+.explain.done{border-left-color:var(--blue)}
+.explain.done .ins{color:var(--blue)}
+
+table.regs{width:100%;border-collapse:collapse;font-size:13.5px}
+table.regs th{font-size:10.5px;letter-spacing:.12em;color:var(--dim);text-align:right;padding:2px 8px 5px;border-bottom:1px solid var(--line2);font-weight:400}
+table.regs th:first-child{text-align:left}
+table.regs td{padding:3px 8px;text-align:right;border-bottom:1px solid #12201a;font-variant-numeric:tabular-nums}
+table.regs td:first-child{text-align:left;color:var(--amber);font-weight:700}
+table.regs td.h{color:var(--green);font-weight:700}
+table.regs td.d{color:var(--dim)}
+table.regs td.chg{animation:flash 1.2s ease-out}
+@keyframes flash{0%{background:rgba(255,176,0,.6);color:#000}100%{background:transparent}}
+.flags{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;align-items:center}
+.flags .lbl{font-size:10.5px;letter-spacing:.12em;color:var(--dim);margin-right:2px}
+.flag{border:1px solid var(--line2);border-radius:4px;padding:2px 10px;font-size:13px;color:var(--dim);display:flex;gap:8px;background:#050806}
+.flag b{color:var(--dim)}
+.flag.on{border-color:var(--amber);color:var(--amber);box-shadow:0 0 12px rgba(255,176,0,.3)}
+.flag.on b{color:var(--amber)}
+.flag.chg{animation:flagflash 1.2s ease-out}
+@keyframes flagflash{0%{background:rgba(255,176,0,.7)}100%{background:#050806}}
+.meta{font-size:12px;color:var(--dim);margin:6px 0 14px}
+.console{border:1px solid var(--line2);border-radius:5px;overflow:hidden;background:#000}
+.console .cb{display:flex;justify-content:space-between;font-size:11px;padding:4px 10px;background:#0b140c;color:var(--dim);border-bottom:1px solid var(--line)}
+.console canvas{display:block;width:100%;height:auto;background:#000;image-rendering:auto;outline:0}
+.keybar{display:flex;gap:8px;align-items:center;padding:7px 10px;background:var(--amber);color:#1a1000;font-size:12.5px;font-weight:700}
+.keybar[hidden]{display:none}
+.keybar input{font:inherit;width:3.2em;text-align:center;border:2px solid #1a1000;background:#fff6dd;color:#000;border-radius:3px;padding:1px}
+
+/* LIBRARY */
+.lib{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.libcard{display:flex;flex-direction:column;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.libcard .thumb{display:block;width:100%;aspect-ratio:8/5;background:#000;border-bottom:1px solid var(--line)}
+.libcard .tpl{aspect-ratio:8/5;border-bottom:1px solid var(--line);background:#030604;display:grid;place-items:center;color:var(--green);font-size:46px;text-shadow:0 0 18px rgba(57,255,106,.6)}
+.libcard .bd{padding:16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.libcard h3{font-size:16px;color:var(--amber)}
+.libcard .fn{font-size:12px;color:var(--green-dim);word-break:break-all}
+.libcard p{font-size:13.5px;margin:0}
+.libcard .tags{display:flex;flex-wrap:wrap;gap:6px}
+.libcard .tags span{font-size:11px;border:1px solid var(--line2);border-radius:999px;padding:0 9px;color:var(--green-dim)}
+.libcard .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:8px}
+
+details.ref{border:1px solid var(--line);border-radius:8px;background:var(--panel);margin-top:22px}
+details.ref summary{cursor:pointer;padding:12px 16px;color:var(--amber);font-weight:700}
+details.ref .in{padding:0 16px 16px;overflow-x:auto}
+
+footer{margin-top:60px;border-top:1px solid var(--line);padding:26px 0 50px;color:var(--dim);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+@media (max-width:980px){
+  .lab-grid{grid-template-columns:minmax(0,1fr)}
+  .pane+.pane{border-left:0;border-top:1px solid var(--line2)}
+}
+@media (max-width:640px){
+  :root{--ed-fs:16px;--ed-lh:24px}
+  body{font-size:14.5px}
+  .editor{height:380px}
+  .steps,.g2{grid-template-columns:minmax(0,1fr)}
+  .term-body{padding:14px}
+  .btn{padding:9px 12px}
+  table.regs{font-size:12.5px}
+  table.regs th,table.regs td{padding:3px 5px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+/* tutorial / ayuda */
+.step.wide{grid-column:1/-1}
+.anat{display:grid;gap:10px;margin:10px 0 12px}
+.arow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:#050806}
+.arow .atxt strong{color:var(--amber);font-size:13.5px}
+.arow .atxt p{margin:4px 0 0;font-size:13px;color:var(--text)}
+.arow.you{border-color:var(--amber-d);background:rgba(255,176,0,.06)}
+.cblock{margin:0;font:inherit;font-size:12.5px;line-height:1.55;background:#030604;border:1px solid var(--line);border-radius:4px;padding:8px 10px;overflow-x:auto;color:var(--text);white-space:pre}
+.cblock .cl{display:block;min-height:1.55em}
+.arow .cblock{border:0;padding:0;background:transparent}
+.tplbtns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.helper{margin-top:18px}
+.hp-grid{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:18px;align-items:start}
+.hp-row{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.hp-row label{font-size:12px;color:var(--dim);margin:0}
+.fld.num{text-transform:none;width:100%;max-width:12em}
+.hp-row select.fld{width:100%;max-width:16em}
+#hpCanvas{width:100%;height:auto;display:block;background:#030604;border:1px solid var(--line2);border-radius:5px}
+.out.bad{border-color:var(--red);color:var(--red)}
+.note.warn{color:var(--red)}
+#hpCode{margin-top:12px}
+.swlbl{font-size:12px;color:var(--dim);margin-top:8px}
+.swrow{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px}
+.sw{width:36px;height:36px;border:2px solid #000;border-radius:4px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:0}
+.sw:hover{transform:translateY(-1px)}
+.sw.on{border-color:var(--amber);box-shadow:0 0 0 2px #000,0 0 10px rgba(255,176,0,.6)}
+.bhsample{font-weight:700;padding:6px 16px}
+@media (max-width:900px){.hp-grid{grid-template-columns:minmax(0,1fr)}.arow{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Secciones">
+  <div class="wrap">
+    <a class="brand" href="#inicio">C:\&gt;<span>emu8086</span>_</a>
+    <ul>
+      <li><a class="lk" href="#como-iniciar">01 Cómo iniciar</a></li>
+      <li><a class="lk" href="#laboratorio">02 Laboratorio</a></li>
+      <li><a class="lk" href="#ayuda">03 Ayuda</a></li>
+      <li><a class="lk" href="#biblioteca">04 Biblioteca</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="inicio">
+  <div class="wrap">
+    <div class="term" aria-hidden="true">
+      <div class="term-bar"><i></i><i></i><i></i><span>emu8086.exe — sesión de aprendizaje</span></div>
+      <div class="term-body"><div id="typer"></div></div>
+    </div>
+    <h1>Aprende <em>ensamblador 8086</em><br>paso a paso, en tu navegador</h1>
+    <div class="cta">
+      <a class="btn primary" href="#laboratorio">▶ Ir al laboratorio</a>
+      <a class="btn" href="#como-iniciar">Cómo iniciar</a>
+      <a class="btn amber" href="#ayuda">Ayuda de posiciones</a>
+      <a class="btn amber" href="#biblioteca">Biblioteca de ejemplos</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- ======================= 01 CÓMO INICIAR (TUTORIAL) ======================= -->
+<section class="sec" id="como-iniciar">
+  <div class="wrap">
+    <div class="sec-h"><span class="idx">01</span><h2>Tutorial: cómo iniciar</h2></div>
+    <p class="sec-intro">Sigue los pasos en orden. Al terminar tendrás un programa armado sobre una <strong>plantilla</strong>, ejecutado paso a paso en emu8086. Marca cada paso cuando lo completes.</p>
+    <div class="progress-l" id="progLabel">Progreso: 0 de 6 pasos</div>
+    <div class="progress" aria-hidden="true"><i id="progBar"></i></div>
+
+    <div class="steps" id="steps">
+      <article class="step" data-step="1">
+        <span class="num">01</span>
+        <h3>Abre emu8086 y crea un programa nuevo</h3>
+        <p>Inicia el programa desde el menú Inicio o su acceso directo. En la ventana de bienvenida pulsa <strong>New</strong> y elige <strong>EXE template</strong>: es la plantilla que usan todos los ejemplos de la biblioteca.</p>
+        <div class="mock" aria-hidden="true"><div class="mock-bar"><i></i><i></i><i></i><span>emu8086 — New</span></div><div class="mlist"><div>COM template</div><div class="sel">▸ EXE template</div><div>BIN template</div><div>Empty workspace</div></div></div>
+        <button class="tick" type="button">☐ Marcar como hecho</button>
+      </article>
+
+      <article class="step wide" data-step="2">
+        <span class="num">02</span>
+        <h3>Parte de la plantilla</h3>
+        <p>Todo programa de la biblioteca tiene el mismo esqueleto. Así está formado, parte por parte. <strong>Tu código va solo en la zona 5</strong>; lo demás se queda igual.</p>
+        <div class="anat" id="anat"></div>
+        <div class="tplbtns">
+          <button class="btn sm primary" id="tplCopy" type="button">⧉ Copiar plantilla</button>
+          <button class="btn sm" id="tplDl" type="button">⭳ Descargar plantilla.asm</button>
+          <button class="btn sm amber" id="tplLab" type="button">▶ Probarla en el laboratorio</button>
+        </div>
+        <p class="note">Para tenerla siempre a la mano: pega la plantilla en el editor de emu8086, guárdala como <code>plantilla.asm</code> y, cada vez que empieces un programa nuevo, abre una copia y guárdala con otro nombre.</p>
+        <button class="tick" type="button">☐ Marcar como hecho</button>
+      </article>
+
+      <article class="step" data-step="3">
+        <span class="num">03</span>
+        <h3>Escribe tu código en la zona marcada</h3>
+        <p>Todo lo que escribas va entre la preparación de <code>DS</code> y la salida del programa. Lo que va después de <code>;</code> es un comentario: úsalo para anotar qué hace cada línea.</p>
+        <div class="mock" aria-hidden="true"><div class="mock-bar"><i></i><i></i><i></i><span>mi_programa.asm</span></div><div class="mcode"><span class="c">; ===== TU CÓDIGO VA AQUÍ =====</span>
+<span class="k">mov</span> ah, <span class="n">06</span>
+<span class="k">mov</span> ch, <span class="n">08</span>
+<span class="k">mov</span> cl, <span class="n">15</span>
+<span class="k">int</span> <span class="n">10h</span>
+<span class="c">; ===== FIN DE TU CÓDIGO =====</span></div></div>
+        <button class="tick" type="button">☐ Marcar como hecho</button>
+      </article>
+
+      <article class="step" data-step="4">
+        <span class="num">04</span>
+        <h3>Presiona <em style="color:var(--amber);font-style:normal">Emulate</em></h3>
+        <p>En la barra de herramientas pulsa <strong>Emulate</strong> (<kbd>F5</kbd>). emu8086 ensambla el código y abre la ventana del emulador con tu programa cargado, listo para ejecutarse.</p>
+        <div class="mock" aria-hidden="true"><div class="mock-bar"><i></i><i></i><i></i><span>barra de herramientas</span></div><div class="mock-body"><span class="mbtn">new</span><span class="mbtn">open</span><span class="mbtn">compile</span><span class="mbtn hot">▶ emulate</span></div></div>
+        <p style="font-size:13px;color:var(--dim)">Si hay errores de sintaxis, el ensamblador los lista antes de abrir el emulador.</p>
+        <button class="tick" type="button">☐ Marcar como hecho</button>
+      </article>
+
+      <article class="step" data-step="5">
+        <span class="num">05</span>
+        <h3>Avanza con <em style="color:var(--amber);font-style:normal">Single Step</em> <kbd>F8</kbd></h3>
+        <p>Cada vez que pulsas <strong>Single Step</strong> se ejecuta una sola instrucción. Observa la línea resaltada (la siguiente por ejecutar) y qué registros cambian. <strong>Reload</strong> reinicia el programa.</p>
+        <div class="mock" aria-hidden="true"><div class="mock-bar"><i></i><i></i><i></i><span>emulator</span></div>
+          <div class="memu"><div class="r">AX <b>0008h</b><br>BX 0000h<br>IP 0105h</div><div class="src"><div>mov ax, 5</div><div class="cur">▶ add ax, 3</div><div>ret</div></div></div>
+          <div class="mock-body" style="padding-top:0"><span class="mbtn">run</span><span class="mbtn hot">single step</span><span class="mbtn">reload</span></div></div>
+        <button class="tick" type="button">☐ Marcar como hecho</button>
+      </article>
+
+      <article class="step" data-step="6">
+        <span class="num">06</span>
+        <h3>Observa las banderas (flags)</h3>
+        <p>Las <strong>banderas</strong> guardan información sobre el resultado de la última operación. En la ventana del emulador abre <strong>flags</strong> para verlas. Las tres básicas:</p>
+        <ul style="font-size:14px;margin:0 0 8px;padding-left:1.2em">
+          <li><code>ZF</code> (cero): vale 1 si el resultado fue 0.</li>
+          <li><code>CF</code> (acarreo): vale 1 si "se llevó" o "se pidió prestado" fuera del tamaño del registro.</li>
+          <li><code>SF</code> (signo): copia el bit más alto del resultado (1 = negativo).</li>
+        </ul>
+        <div class="widget" style="margin-top:12px">
+          <h4>▸ Prueba las banderas (8 bits)</h4>
+          <label for="fA">A (hex)</label><input id="fA" class="fld" value="FF" maxlength="2" style="width:3.8em" autocomplete="off" spellcheck="false">
+          <select id="fOp" class="fld" aria-label="Operación"><option value="add">ADD</option><option value="sub">SUB</option><option value="cmp">CMP</option></select>
+          <label for="fB">B (hex)</label><input id="fB" class="fld" value="01" maxlength="2" style="width:3.8em" autocomplete="off" spellcheck="false">
+          <div class="outs" aria-live="polite">
+            <span class="out">resultado = <b id="fR">00h</b></span>
+            <span class="out flag" id="fZF">ZF = <b>0</b></span>
+            <span class="out flag" id="fCF">CF = <b>0</b></span>
+            <span class="out flag" id="fSF">SF = <b>0</b></span>
+          </div>
+          <p class="note" id="fWhy"></p>
+        </div>
+        <button class="tick" type="button">☐ Marcar como hecho</button>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 03 LABORATORIO ======================= -->
+<section class="sec" id="laboratorio">
+  <div class="wrap wide">
+    <div class="sec-h"><span class="idx">02</span><h2>Laboratorio interactivo</h2></div>
+    <p class="sec-intro">Elige un ejemplo, pulsa <strong>Paso a paso</strong> (<kbd>F8</kbd>) y observa: la línea ámbar es la <em>siguiente</em> instrucción, la verde es la última ejecutada. También puedes editar el código directamente.</p>
+
+    <div class="lab-bar" role="toolbar" aria-label="Controles de ejecución">
+      <button class="btn primary" id="btnRun" type="button"><span id="runIco">▶</span> <span id="runTxt">Ejecutar todo</span> <kbd>F9</kbd></button>
+      <button class="btn amber" id="btnStep" type="button">⏭ Paso a paso <kbd>F8</kbd></button>
+      <button class="btn" id="btnReset" type="button">↺ Reiniciar</button>
+      <span class="spacer"></span>
+      <label class="speed">Velocidad
+        <select id="speed" aria-label="Velocidad de ejecución">
+          <option value="slow">Lenta</option><option value="normal">Normal</option><option value="fast" selected>Rápida</option><option value="instant">Instantánea</option>
+        </select>
+      </label>
+      <span class="runstate ready" id="runState" role="status" aria-live="polite">LISTO</span>
+    </div>
+
+    <div class="lab-grid">
+      <!-- IZQUIERDA -->
+      <div class="pane">
+        <h3>Editor de código</h3>
+        <div class="tabs" id="tabs" role="tablist" aria-label="Ejemplos"></div>
+        <div class="ed-head"><span class="f" id="edFile"></span><span class="spacer"></span>
+          <button class="btn sm" id="btnCopy" type="button">⧉ Copiar</button>
+          <button class="btn sm" id="btnDl" type="button">⭳ .asm</button>
+          <button class="btn sm" id="btnRestore" type="button">⟲ Restaurar</button>
+        </div>
+        <p class="tabdesc" id="tabDesc"></p>
+        <div class="editor" id="editor">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <div class="ed-body">
+            <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+            <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Código ensamblador editable"></textarea>
+          </div>
+        </div>
+        <div class="asm-status" id="asmStatus" aria-live="polite"></div>
+        <div class="explain" id="explain" aria-live="polite"></div>
+      </div>
+
+      <!-- DERECHA -->
+      <div class="pane">
+        <h3>Registros y banderas</h3>
+        <table class="regs" id="regs" aria-label="Registros del procesador">
+          <thead><tr><th>REG</th><th>HEX</th><th>H</th><th>L</th><th>DEC</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="flags" id="flags" aria-label="Banderas">
+          <span class="lbl">FLAGS</span>
+          <span class="flag" data-f="ZF">ZF <b>0</b></span>
+          <span class="flag" data-f="CF">CF <b>0</b></span>
+          <span class="flag" data-f="SF">SF <b>0</b></span>
+          <span class="flag" data-f="OF">OF <b>0</b></span>
+        </div>
+        <div class="meta" id="meta">IP simulado: la dirección parte de 0100h y se calcula con un tamaño estimado por instrucción.</div>
+
+        <h3>Pantalla / salida</h3>
+        <div class="console">
+          <div class="cb"><span>emulator screen</span><span id="scrInfo">80×25</span></div>
+          <canvas id="screen" width="960" height="600" aria-label="Pantalla de texto del programa" role="img"></canvas>
+          <div class="keybar" id="keyBar" hidden><span>⌨ El programa espera una tecla — púlsala ahora:</span><input id="keyIn" maxlength="1" autocomplete="off" aria-label="Tecla para el programa"></div>
+        </div>
+        <p class="note">Simulador didáctico: soporta un subconjunto de instrucciones del 8086 y de las interrupciones <code>INT 10h</code> / <code>INT 21h</code>.</p>
+      </div>
+    </div>
+
+    <details class="ref">
+      <summary>Referencia rápida de lo que entiende este simulador</summary>
+      <div class="in">
+        <table class="cmp">
+          <tr><th>Interrupción</th><th>AH</th><th>Qué hace</th></tr>
+          <tr><td><code>INT 10h</code></td><td><code>00h</code></td><td>Fija el modo de video (<code>AL</code>) y limpia la pantalla. Modos 0 y 1 = 40×25; el resto, 80×25.</td></tr>
+          <tr><td><code>INT 10h</code></td><td><code>06h</code></td><td>Desplaza hacia arriba una ventana. <code>AL</code>=líneas (0 = limpiar/pintar toda), <code>BH</code>=color, <code>CH:CL</code>=esquina superior izquierda (fila:columna), <code>DH:DL</code>=inferior derecha.</td></tr>
+          <tr><td><code>INT 10h</code></td><td><code>02h · 09h · 0Eh</code></td><td>Mover cursor (<code>DH</code>,<code>DL</code>) · escribir carácter con color (<code>BL</code>, <code>CX</code> veces) · escribir carácter y avanzar.</td></tr>
+          <tr><td><code>INT 21h</code></td><td><code>09h</code></td><td>Imprime la cadena en <code>DS:DX</code> hasta el carácter <code>$</code>.</td></tr>
+          <tr><td><code>INT 21h</code></td><td><code>02h</code></td><td>Imprime el carácter de <code>DL</code>.</td></tr>
+          <tr><td><code>INT 21h</code></td><td><code>01h · 07h · 08h</code></td><td>Lee una tecla en <code>AL</code> (01h la muestra en pantalla).</td></tr>
+          <tr><td><code>INT 21h</code></td><td><code>4Ch</code></td><td>Termina el programa.</td></tr>
+        </table>
+        <p class="note" style="margin-top:14px">Colores (<code>BH</code>/<code>BL</code>): el nibble alto es el <strong>fondo</strong> y el bajo el <strong>texto</strong>. <code>0</code> negro · <code>1</code> azul · <code>2</code> verde · <code>3</code> cian · <code>4</code> rojo · <code>5</code> magenta · <code>6</code> marrón · <code>7</code> gris · <code>8</code> gris oscuro · <code>9</code>–<code>F</code> versiones claras (<code>C</code> rojo claro, <code>E</code> amarillo, <code>F</code> blanco). Así, <code>0CFh</code> = fondo rojo claro con texto blanco.</p>
+        <p class="note">Instrucciones: <code>mov add sub inc dec cmp and or xor test neg not mul div shl shr sar xchg lea push pop jmp je jne jg jl jge jle ja jb jae jbe jc jnc js jns jcxz loop call ret int nop hlt cbw cwd clc stc</code>.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ======================= 03 AYUDA ======================= -->
+<section class="sec" id="ayuda">
+  <div class="wrap">
+    <div class="sec-h"><span class="idx">03</span><h2>Ayuda: ¿qué números pongo?</h2></div>
+    <p class="sec-intro">Para pintar y colocar una figura con <code>INT 10h</code> función <code>06h</code> necesitas cuatro números de posición (<code>CH</code>, <code>CL</code>, <code>DH</code>, <code>DL</code>) y uno de color (<code>BH</code>). Aquí tienes la referencia, un ayudante que calcula los números y recetas para centrar, bajar o mover.</p>
+
+    <div class="grid g2">
+      <article class="card">
+        <h3><span class="pre">&gt;</span> INT 10h · función 06h</h3>
+        <p style="margin-bottom:6px"><strong>Desplazar líneas de texto hacia arriba.</strong> Con <code>AL = 0</code> sirve para pintar un rectángulo de color.</p>
+        <svg viewBox="0 0 360 220" role="img" aria-label="Ventana definida por CH, CL, DH y DL sobre la pantalla de texto" style="width:100%;max-width:430px;height:auto;display:block;margin:8px 0 10px">
+          <rect x="30" y="20" width="320" height="180" fill="#030604" stroke="#2a5530"/>
+          <g stroke="#1d3a21" stroke-width="1"><path d="M70 20V200M110 20V200M150 20V200M190 20V200M230 20V200M270 20V200M310 20V200M30 50H350M30 80H350M30 110H350M30 140H350M30 170H350"/></g>
+          <rect x="110" y="50" width="160" height="90" fill="rgba(255,176,0,.22)" stroke="#ffb000" stroke-width="2"/>
+          <circle cx="110" cy="50" r="4" fill="#ffb000"/><circle cx="270" cy="140" r="4" fill="#ffb000"/>
+          <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#ffb000">
+            <text x="114" y="46">(CH, CL)</text>
+            <text x="266" y="158" text-anchor="end">(DH, DL)</text>
+          </g>
+          <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="10" fill="#6fa77a">
+            <text x="32" y="14">0,0   columnas →</text>
+            <text x="14" y="198" transform="rotate(-90 14 198)">filas →</text>
+          </g>
+        </svg>
+        <table class="cmp">
+          <tr><th>Registro</th><th>Qué lleva</th></tr>
+          <tr><td><code>AH</code></td><td><code>06h</code>: número de la función.</td></tr>
+          <tr><td><code>AL</code></td><td>Cuántas líneas se desplazan hacia arriba. Con <code>0</code> se borra (se pinta) <strong>toda</strong> la ventana indicada con <code>CX</code> y <code>DX</code>.</td></tr>
+          <tr><td><code>BH</code></td><td>Atributo (color) con el que se rellenan las líneas que quedan vacías.</td></tr>
+          <tr><td><code>CH</code></td><td>Fila donde <strong>empieza</strong> la ventana.</td></tr>
+          <tr><td><code>CL</code></td><td>Columna donde <strong>empieza</strong> la ventana.</td></tr>
+          <tr><td><code>DH</code></td><td>Fila donde <strong>termina</strong> la ventana.</td></tr>
+          <tr><td><code>DL</code></td><td>Columna donde <strong>termina</strong> la ventana.</td></tr>
+        </table>
+        <p class="note"><strong>Devuelve:</strong> nada. <strong>Efecto:</strong> sube el contenido de la ventana tantas líneas como indique <code>AL</code>; las líneas que quedan libres se llenan con espacios del color de <code>BH</code>. Por eso, con <code>AL = 0</code>, toda la ventana se "borra" con ese color y queda un rectángulo sólido.</p>
+      </article>
+
+      <article class="card">
+        <h3><span class="pre">&gt;</span> Recetas: centrar, bajar, mover</h3>
+        <table class="cmp">
+          <tr><th>Quiero…</th><th>Hago…</th></tr>
+          <tr><td>Centrar a lo ancho</td><td><code>CL = (columnas − ancho) ÷ 2</code><br><code>DL = CL + ancho − 1</code></td></tr>
+          <tr><td>Centrar a lo alto</td><td><code>CH = (25 − alto) ÷ 2</code><br><code>DH = CH + alto − 1</code></td></tr>
+          <tr><td>Bajar N filas</td><td>Suma N a <code>CH</code> <strong>y</strong> a <code>DH</code></td></tr>
+          <tr><td>Subir N filas</td><td>Resta N a <code>CH</code> y a <code>DH</code></td></tr>
+          <tr><td>Mover a la derecha N</td><td>Suma N a <code>CL</code> <strong>y</strong> a <code>DL</code></td></tr>
+          <tr><td>Mover a la izquierda N</td><td>Resta N a <code>CL</code> y a <code>DL</code></td></tr>
+          <tr><td>Pegar a la derecha</td><td><code>DL</code> = última columna (39 u 79); <code>CL = DL − ancho + 1</code></td></tr>
+          <tr><td>Pegar abajo</td><td><code>DH = 24</code>; <code>CH = DH − alto + 1</code></td></tr>
+          <tr><td>Hacerla más ancha o alta</td><td>Aumenta solo <code>DL</code> (ancho) o solo <code>DH</code> (alto)</td></tr>
+          <tr><td>Saber el tamaño</td><td><code>ancho = DL − CL + 1</code><br><code>alto = DH − CH + 1</code></td></tr>
+        </table>
+        <ul style="margin:12px 0 0;padding-left:1.2em;font-size:13.5px">
+          <li>Filas y columnas <strong>empiezan en 0</strong>. Filas: 0 a 24.</li>
+          <li><strong>Modo 0:</strong> 40 columnas (0 a 39). Las celdas son cuadradas: para un cuadrado, ancho = alto.</li>
+          <li><strong>Modo 3:</strong> 80 columnas (0 a 79). Las celdas son el doble de altas que anchas: para un cuadrado, ancho ≈ 2 × alto.</li>
+          <li>Si <code>columnas − ancho</code> es impar no se puede centrar exacto: sobra una celda de un lado.</li>
+        </ul>
+        <p class="note"><strong>Ejemplo:</strong> un rectángulo de 10 de ancho y 7 de alto, centrado en el modo 0 → <code>CL = 15</code>, <code>DL = 24</code>, <code>CH = 9</code>, <code>DH = 15</code>.</p>
+      </article>
+    </div>
+
+    <div class="widget helper" id="helper">
+      <h4>▸ Ayudante de posición</h4>
+      <p class="note" style="margin:0 0 12px">Elige el tamaño y dónde lo quieres: te da los números y el código. Puedes enviarlo al laboratorio para verlo.</p>
+      <div class="hp-grid">
+        <div class="hp-ctl">
+          <div class="hp-row"><label for="hpMode">Pantalla</label>
+            <select id="hpMode" class="fld"><option value="0">Modo 0 · 40×25</option><option value="3">Modo 3 · 80×25</option></select></div>
+          <div class="hp-row"><label for="hpW">Ancho (columnas)</label><input id="hpW" class="fld num" type="number" min="1" max="80" value="10"></div>
+          <div class="hp-row"><label for="hpH">Alto (filas)</label><input id="hpH" class="fld num" type="number" min="1" max="25" value="7"></div>
+          <div class="hp-row"><label for="hpPos">Posición</label>
+            <select id="hpPos" class="fld">
+              <option value="mc">Centro</option><option value="tl">Arriba · izquierda</option><option value="tc">Arriba · centro</option><option value="tr">Arriba · derecha</option>
+              <option value="ml">Medio · izquierda</option><option value="mr">Medio · derecha</option>
+              <option value="bl">Abajo · izquierda</option><option value="bc">Abajo · centro</option><option value="br">Abajo · derecha</option>
+            </select></div>
+          <div class="hp-row"><label for="hpDX">Mover → (+ derecha / − izquierda)</label><input id="hpDX" class="fld num" type="number" value="0"></div>
+          <div class="hp-row"><label for="hpDY">Mover ↓ (+ abajo / − arriba)</label><input id="hpDY" class="fld num" type="number" value="0"></div>
+          <div class="hp-row"><label for="hpColor">Color de fondo</label><select id="hpColor" class="fld"></select></div>
+        </div>
+        <div class="hp-out">
+          <canvas id="hpCanvas" width="704" height="440" role="img" aria-label="Vista previa de la figura sobre la pantalla"></canvas>
+        </div>
+      </div>
+      <div class="outs" id="hpNums" aria-live="polite"></div>
+      <div class="note" id="hpInfo"></div>
+      <pre class="cblock" id="hpCode" aria-label="Código generado"></pre>
+      <div class="tplbtns">
+        <button class="btn sm primary" id="hpCopy" type="button">⧉ Copiar código</button>
+        <button class="btn sm amber" id="hpLab" type="button">▶ Probar en el laboratorio</button>
+      </div>
+    </div>
+
+    <div class="widget" style="margin-top:18px">
+      <h4>▸ Selector de color (registro BH)</h4>
+      <p class="note" style="margin:0 0 6px"><code>BH</code> = dos dígitos hexadecimales: el primero es el <strong>fondo</strong> y el segundo el <strong>texto</strong>. Al pintar bloques solo se ve el fondo.</p>
+      <div class="swlbl">Fondo (primer dígito)</div><div class="swrow" id="bhBg"></div>
+      <div class="swlbl">Texto (segundo dígito)</div><div class="swrow" id="bhFg"></div>
+      <div class="outs">
+        <span class="out">BH = <b id="bhVal">0CFh</b></span>
+        <span class="out"><code id="bhAsm">mov bh, 0cfh</code></span>
+        <span class="out bhsample" id="bhSample">Abc 123</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 04 BIBLIOTECA ======================= -->
+<section class="sec" id="biblioteca">
+  <div class="wrap">
+    <div class="sec-h"><span class="idx">04</span><h2>Biblioteca de ejemplos</h2></div>
+    <p class="sec-intro">Programas listos para estudiar, modificar y reutilizar. Cada uno está comentado línea por línea. Las miniaturas son el resultado real de ejecutar el código en el simulador. Ábrelos en el laboratorio, cópialos o descárgalos como <code>.asm</code> para usarlos en emu8086.</p>
+    <div class="lib" id="lib"></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>emu8086 · guía interactiva de ensamblador 8086</span>
+    <span>Atajos del laboratorio: <kbd>F8</kbd> paso a paso · <kbd>F9</kbd> ejecutar</span>
+  </div>
+</footer>
+
+<script>
+'use strict';
+/*ENGINE_START*/
+const REG16 = ['AX','CX','DX','BX','SP','BP','SI','DI'];
+const SEGR = ['ES','CS','SS','DS'];
+const R8 = {AL:['AX',0],AH:['AX',8],CL:['CX',0],CH:['CX',8],DL:['DX',0],DH:['DX',8],BL:['BX',0],BH:['BX',8]};
+const REGSIZE = {};
+REG16.forEach(r => REGSIZE[r] = 16);
+SEGR.forEach(r => REGSIZE[r] = 16);
+Object.keys(R8).forEach(r => REGSIZE[r] = 8);
+const hex = (v, n = 4) => (v >>> 0).toString(16).toUpperCase().padStart(n, '0');
+const mask = s => s === 8 ? 0xFF : 0xFFFF;
+const sbit = s => s === 8 ? 0x80 : 0x8000;
+const PAL = ['#000000','#0000aa','#00aa00','#00aaaa','#aa0000','#aa00aa','#aa5500','#aaaaaa','#555555','#5555ff','#55ff55','#55ffff','#ff5555','#ff55ff','#ffff55','#ffffff'];
+const STEP_LIMIT = 200000;
+
+const JCC = {
+  je:c=>c.ZF, jz:c=>c.ZF, jne:c=>!c.ZF, jnz:c=>!c.ZF,
+  jg:c=>!c.ZF && c.SF===c.OF, jnle:c=>!c.ZF && c.SF===c.OF,
+  jge:c=>c.SF===c.OF, jnl:c=>c.SF===c.OF,
+  jl:c=>c.SF!==c.OF, jnge:c=>c.SF!==c.OF,
+  jle:c=>c.ZF || c.SF!==c.OF, jng:c=>c.ZF || c.SF!==c.OF,
+  ja:c=>!c.CF && !c.ZF, jnbe:c=>!c.CF && !c.ZF,
+  jae:c=>!c.CF, jnb:c=>!c.CF, jnc:c=>!c.CF,
+  jb:c=>c.CF, jnae:c=>c.CF, jc:c=>c.CF,
+  jbe:c=>c.CF || c.ZF, jna:c=>c.CF || c.ZF,
+  js:c=>c.SF, jns:c=>!c.SF, jo:c=>c.OF, jno:c=>!c.OF,
+  jcxz:c=>c.CX===0
+};
+const ARITY = {mov:2,add:2,sub:2,cmp:2,and:2,or:2,xor:2,test:2,xchg:2,lea:2,shl:2,shr:2,sal:2,sar:2,
+  inc:1,dec:1,neg:1,not:1,mul:1,div:1,push:1,pop:1,jmp:1,call:1,loop:1,int:1,
+  ret:0,nop:0,hlt:0,cld:0,std:0,cbw:0,cwd:0,clc:0,stc:0,cmc:0};
+Object.keys(JCC).forEach(j => ARITY[j] = 1);
+
+function findComment(l){
+  let q = null;
+  for (let i = 0; i < l.length; i++){
+    const c = l[i];
+    if (q){ if (c === q) q = null; }
+    else if (c === '"' || c === "'") q = c;
+    else if (c === ';') return i;
+  }
+  return -1;
+}
+function stripComment(l){ const i = findComment(l); return i < 0 ? l : l.slice(0, i); }
+function splitArgs(s){
+  const out = []; let cur = '', q = null, d = 0;
+  for (const c of s){
+    if (q){ cur += c; if (c === q) q = null; continue; }
+    if (c === '"' || c === "'"){ q = c; cur += c; continue; }
+    if (c === '[' || c === '(') d++;
+    if (c === ']' || c === ')') d--;
+    if (c === ',' && d === 0){ out.push(cur.trim()); cur = ''; continue; }
+    cur += c;
+  }
+  if (cur.trim() !== '') out.push(cur.trim());
+  return out;
+}
+function parseNumber(t){
+  t = t.trim(); let m;
+  if (/^[+-]?\d+$/.test(t)) return parseInt(t, 10);
+  if ((m = t.match(/^([+-]?)([0-9][0-9a-f]*)h$/i))) return (m[1] === '-' ? -1 : 1) * parseInt(m[2], 16);
+  if ((m = t.match(/^0x([0-9a-f]+)$/i))) return parseInt(m[1], 16);
+  if ((m = t.match(/^([01]+)b$/i))) return parseInt(m[1], 2);
+  if ((m = t.match(/^'(.)'$/)) || (m = t.match(/^"(.)"$/))) return m[1].charCodeAt(0);
+  return null;
+}
+function estSize(ins){
+  const a = ins.args;
+  if (ins.op === 'int' || ARITY[ins.op] === 0) return ins.op === 'ret' ? 1 : (ins.op === 'int' ? 2 : 1);
+  if (JCC[ins.op] || ins.op === 'loop' || ins.op === 'jmp') return 2;
+  if (ins.op === 'call') return 3;
+  let n = 2;
+  if (a.some(o => o.k === 'mem')) n += 2;
+  const im = a.find(o => o.k === 'imm');
+  if (im){ const r = a.find(o => o.k === 'reg'); n += (r && r.size === 8 && im.v <= 255) ? 1 : (r ? 1 : 2); }
+  return n;
+}
+
+function assemble(src){
+  const lines = src.split('\n');
+  const vars = {}, equs = {}, segs = {}, labels = {};
+  const items = [], mem = [], errors = [];
+  let memPtr = 0x0200, pending = [], segCount = 0;
+  const err = (line, msg) => { if (errors.length < 6) errors.push({line, msg}); };
+
+  const bytesOf = (type, argText, line) => {
+    const out = [];
+    const push = v => { if (type === 'db') out.push(v & 255); else { out.push(v & 255, (v >> 8) & 255); } };
+    for (const it of splitArgs(argText)){
+      let m;
+      if ((m = it.match(/^(.+?)\s+dup\s*\((.*)\)$/i))){
+        const cnt = parseNumber(m[1]) ?? equs[m[1].trim().toLowerCase()];
+        if (cnt == null || cnt < 0 || cnt > 4096) throw new Error('Cantidad inválida en DUP: ' + m[1]);
+        const inner = bytesOf(type, m[2], line);
+        for (let k = 0; k < cnt; k++) out.push(...inner);
+        continue;
+      }
+      if (it === '?'){ push(0); continue; }
+      if ((it[0] === '"' || it[0] === "'") && it.length >= 2 && it[it.length - 1] === it[0]){
+        for (const ch of it.slice(1, -1)) push(ch.charCodeAt(0));
+        continue;
+      }
+      let v = parseNumber(it);
+      if (v === null && equs[it.toLowerCase()] !== undefined) v = equs[it.toLowerCase()];
+      if (v === null && vars[it.toLowerCase()]) v = vars[it.toLowerCase()].addr;
+      if (v === null) throw new Error('Valor no válido en ' + type.toUpperCase() + ': "' + it + '"');
+      push(v);
+    }
+    return out;
+  };
+
+  // ---------- pasada 1: etiquetas, datos, instrucciones en bruto ----------
+  for (let i = 0; i < lines.length; i++){
+    let t = stripComment(lines[i]).trim();
+    if (!t) continue;
+    let m;
+    try {
+      while ((m = t.match(/^([A-Za-z_@.][\w@.$]*)\s*:\s*(.*)$/))){
+        pending.push(m[1].toLowerCase()); t = m[2].trim();
+      }
+      if (!t) continue;
+      if ((m = t.match(/^([A-Za-z_]\w*)\s+segment\b/i))){ segs[m[1].toLowerCase()] = 0x0700 + 0x40 * (segCount++); continue; }
+      if (/^(\w+\s+)?ends\b/i.test(t)) continue;
+      if (/^\.(model|stack|data|code)\b/i.test(t) || /^(org|assume|end|title|page|include|name)\b/i.test(t)) continue;
+      if ((m = t.match(/^([A-Za-z_]\w*)\s+endp\b/i)) || /^endp\b/i.test(t)) continue;
+      if ((m = t.match(/^([A-Za-z_]\w*)\s+proc\b/i))){ pending.push(m[1].toLowerCase()); continue; }
+      if ((m = t.match(/^([A-Za-z_]\w*)\s+equ\s+(.+)$/i))){
+        const v = parseNumber(m[2]); if (v === null) throw new Error('EQU solo admite números'); equs[m[1].toLowerCase()] = v; continue;
+      }
+      if ((m = t.match(/^(?:([A-Za-z_]\w*)\s+)?(db|dw)\s+(.+)$/i))){
+        const type = m[2].toLowerCase();
+        const bytes = bytesOf(type, m[3], i);
+        if (memPtr + bytes.length > 0xFF00) throw new Error('Demasiados datos para la memoria del simulador');
+        if (m[1]) vars[m[1].toLowerCase()] = {addr: memPtr, size: type === 'db' ? 8 : 16, name: m[1]};
+        mem.push({addr: memPtr, bytes});
+        memPtr += bytes.length;
+        continue;
+      }
+      const sp = t.search(/\s/);
+      const op = (sp < 0 ? t : t.slice(0, sp)).toLowerCase();
+      const rest = sp < 0 ? '' : t.slice(sp + 1).trim();
+      for (const p of pending) labels[p] = items.length;
+      pending = [];
+      items.push({op, rest, line: i, text: t});
+    } catch (e){ err(i, e.message); }
+  }
+  for (const p of pending) labels[p] = items.length;
+
+  // ---------- pasada 2: operandos ----------
+  const parseMem = (inner, size) => {
+    const base = []; let disp = 0, vsize = null;
+    for (let term of inner.replace(/-/g, '+-').split('+')){
+      term = term.trim(); if (!term) continue;
+      const up = term.toUpperCase();
+      if (['BX','BP','SI','DI'].includes(up)) base.push(up);
+      else if (REGSIZE[up]) throw new Error('El registro ' + up + ' no se puede usar para direccionar memoria');
+      else {
+        const n = parseNumber(term);
+        if (n !== null) disp += n;
+        else if (vars[term.toLowerCase()]){ disp += vars[term.toLowerCase()].addr; vsize = vars[term.toLowerCase()].size; }
+        else if (equs[term.toLowerCase()] !== undefined) disp += equs[term.toLowerCase()];
+        else throw new Error('No reconozco "' + term + '" dentro de los corchetes');
+      }
+    }
+    return {k:'mem', base, disp, size: size || vsize};
+  };
+  const parseOp = (s) => {
+    const txt = s.trim(); s = txt; let size = null, m;
+    if ((m = s.match(/^(byte|word)\s+ptr\s+(.*)$/i))){ size = m[1].toLowerCase() === 'byte' ? 8 : 16; s = m[2].trim(); }
+    s = s.replace(/^(cs|ds|es|ss)\s*:\s*/i, '');
+    const up = s.toUpperCase();
+    if (REGSIZE[up]) return {k:'reg', n:up, size:REGSIZE[up], txt};
+    if (s[0] === '['){
+      if (s[s.length - 1] !== ']') throw new Error('Falta cerrar el corchete en "' + txt + '"');
+      return {...parseMem(s.slice(1, -1), size), txt};
+    }
+    if ((m = s.match(/^offset\s+(\w+)$/i))){
+      const v = vars[m[1].toLowerCase()];
+      if (!v) throw new Error('OFFSET: no existe la variable "' + m[1] + '"');
+      return {k:'imm', v:v.addr, txt};
+    }
+    const n = parseNumber(s);
+    if (n !== null) return {k:'imm', v:n, txt};
+    const lc = s.toLowerCase();
+    if (equs[lc] !== undefined) return {k:'imm', v:equs[lc], txt};
+    if (vars[lc]) return {k:'mem', base:[], disp:vars[lc].addr, size: size || vars[lc].size, txt};
+    if (segs[lc] !== undefined) return {k:'imm', v:segs[lc], txt};
+    if (labels[lc] !== undefined) return {k:'label', idx:labels[lc], txt};
+    throw new Error('No reconozco "' + txt + '"');
+  };
+
+  const instrs = [];
+  for (const it of items){
+    try {
+      if (ARITY[it.op] === undefined) throw new Error('Instrucción no soportada por el simulador: "' + it.op + '"');
+      const raw = splitArgs(it.rest);
+      if (raw.length !== ARITY[it.op]) throw new Error(it.op.toUpperCase() + ' necesita ' + ARITY[it.op] + ' operando(s) y recibió ' + raw.length);
+      const args = raw.map(parseOp);
+      if (['jmp','call','loop'].includes(it.op) || JCC[it.op]){
+        if (args[0].k !== 'label') throw new Error(it.op.toUpperCase() + ' necesita una etiqueta de destino');
+      }
+      if (it.op === 'int' && args[0].k !== 'imm') throw new Error('INT necesita un número (por ejemplo 21h)');
+      instrs.push({op: it.op, args, line: it.line, text: it.text});
+    } catch (e){ err(it.line, e.message); }
+  }
+  let ip = 0x100;
+  for (const ins of instrs){ ins.ip = ip; ip += estSize(ins); }
+  if (!instrs.length && !errors.length) err(0, 'No hay instrucciones que ejecutar.');
+  const entry = labels['start'] !== undefined ? labels['start'] : 0;
+  return {ok: errors.length === 0, errors, instrs, mem, vars, labels, entry};
+}
+
+class Screen {
+  constructor(){ this.reset(80); }
+  reset(cols){
+    this.cols = cols; this.rows = 25;
+    this.ch = new Uint8Array(cols * 25).fill(32);
+    this.at = new Uint8Array(cols * 25).fill(7);
+    this.cx = 0; this.cy = 0; this.mode = cols === 40 ? 0 : 3;
+  }
+  put(c){
+    if (c === 13){ this.cx = 0; return; }
+    if (c === 10){ this.lf(); return; }
+    if (c === 8){ if (this.cx > 0) this.cx--; return; }
+    if (c === 7) return;
+    this.ch[this.cy * this.cols + this.cx] = c;
+    this.cx++;
+    if (this.cx >= this.cols){ this.cx = 0; this.lf(); }
+  }
+  lf(){
+    this.cy++;
+    if (this.cy >= this.rows){ this.cy = this.rows - 1; this.scroll(1, 7, 0, 0, this.rows - 1, this.cols - 1, true); }
+  }
+  scroll(n, attr, t, l, b, r, up){
+    t = Math.max(0, Math.min(this.rows - 1, t)); b = Math.max(0, Math.min(this.rows - 1, b));
+    l = Math.max(0, Math.min(this.cols - 1, l)); r = Math.max(0, Math.min(this.cols - 1, r));
+    if (t > b || l > r) return;
+    const h = b - t + 1, C = this.cols;
+    const blank = y => { for (let x = l; x <= r; x++){ this.ch[y * C + x] = 32; this.at[y * C + x] = attr; } };
+    if (n === 0 || n >= h){ for (let y = t; y <= b; y++) blank(y); return; }
+    if (up){
+      for (let y = t; y <= b - n; y++) for (let x = l; x <= r; x++){ this.ch[y*C+x] = this.ch[(y+n)*C+x]; this.at[y*C+x] = this.at[(y+n)*C+x]; }
+      for (let y = b - n + 1; y <= b; y++) blank(y);
+    } else {
+      for (let y = b; y >= t + n; y--) for (let x = l; x <= r; x++){ this.ch[y*C+x] = this.ch[(y-n)*C+x]; this.at[y*C+x] = this.at[(y-n)*C+x]; }
+      for (let y = t; y < t + n; y++) blank(y);
+    }
+  }
+  text(){
+    const rows = [];
+    for (let y = 0; y < this.rows; y++) rows.push(String.fromCharCode(...this.ch.slice(y * this.cols, (y + 1) * this.cols)).replace(/\s+$/, ''));
+    while (rows.length && !rows[rows.length - 1]) rows.pop();
+    return rows.join('\n');
+  }
+}
+
+class Machine {
+  constructor(prog){ this.prog = prog; this.reset(); }
+  reset(){
+    this.cpu = {AX:0,BX:0,CX:0,DX:0,SI:0,DI:0,BP:0,SP:0xFFFE,IP:0x100,ES:0x0700,CS:0x0700,SS:0x0700,DS:0x0700,ZF:0,CF:0,SF:0,OF:0};
+    this.mem = new Uint8Array(65536);
+    for (const d of this.prog.mem) d.bytes.forEach((b, i) => this.mem[d.addr + i] = b);
+    this.stack = new Map();
+    this.screen = new Screen();
+    this.idx = this.prog.entry; this.steps = 0; this.state = 'ready'; this.msg = '';
+    this.keybuf = []; this.wait = null; this.lastIdx = -1; this.errLine = -1;
+    const f = this.prog.instrs[this.idx]; if (f) this.cpu.IP = f.ip;
+  }
+  snapshot(){ return {...this.cpu}; }
+  getReg(n){ if (R8[n]){ const [r, sh] = R8[n]; return (this.cpu[r] >> sh) & 255; } return this.cpu[n]; }
+  setReg(n, v){
+    const c = this.cpu;
+    if (R8[n]){ const [r, sh] = R8[n]; c[r] = ((c[r] & ~(255 << sh)) & 0xFFFF) | ((v & 255) << sh); }
+    else c[n] = v & 0xFFFF;
+  }
+  ea(o){ let a = o.disp; for (const r of o.base) a += this.cpu[r]; return a & 0xFFFF; }
+  sz(a, b){
+    let s = (a && a.k !== 'imm' && a.size) || (b && b.size) || null;
+    if (!s) throw new Error('No se sabe el tamaño del operando: usa BYTE PTR o WORD PTR (por ejemplo: mov byte ptr [si], 5)');
+    return s;
+  }
+  read(o, s){
+    if (o.k === 'imm') return o.v & mask(s);
+    if (o.k === 'reg') return this.getReg(o.n);
+    const a = this.ea(o);
+    return s === 8 ? this.mem[a] : (this.mem[a] | (this.mem[(a + 1) & 0xFFFF] << 8));
+  }
+  write(o, v, s){
+    if (o.k === 'reg'){ this.setReg(o.n, v); return; }
+    if (o.k !== 'mem') throw new Error('El destino no se puede modificar');
+    const a = this.ea(o);
+    this.mem[a] = v & 255; if (s === 16) this.mem[(a + 1) & 0xFFFF] = (v >> 8) & 255;
+  }
+  chk(a, b, s){
+    if (a.k !== 'imm' && b && b.k !== 'imm' && a.size && b.size && a.size !== b.size)
+      throw new Error('Los tamaños no coinciden: ' + a.txt + ' es de ' + a.size + ' bits y ' + b.txt + ' de ' + b.size);
+    if (b && b.k === 'imm' && (b.v > mask(s) || b.v < -sbit(s)))
+      throw new Error('El valor ' + b.txt + ' no cabe en ' + s + ' bits');
+  }
+  flagsZS(r, s){ this.cpu.ZF = r === 0 ? 1 : 0; this.cpu.SF = (r & sbit(s)) ? 1 : 0; }
+  add(a, b, s){
+    const full = a + b, r = full & mask(s);
+    this.cpu.CF = full > mask(s) ? 1 : 0;
+    this.cpu.OF = (((a ^ r) & (b ^ r) & sbit(s)) !== 0) ? 1 : 0;
+    this.flagsZS(r, s); return r;
+  }
+  sub(a, b, s){
+    const r = (a - b) & mask(s);
+    this.cpu.CF = a < b ? 1 : 0;
+    this.cpu.OF = (((a ^ b) & (a ^ r) & sbit(s)) !== 0) ? 1 : 0;
+    this.flagsZS(r, s); return r;
+  }
+  logic(r, s){ this.cpu.CF = 0; this.cpu.OF = 0; this.flagsZS(r, s); }
+  push(v){ this.cpu.SP = (this.cpu.SP - 2) & 0xFFFF; this.stack.set(this.cpu.SP, v & 0xFFFF); }
+  pop(){ const v = this.stack.get(this.cpu.SP) ?? 0; this.stack.delete(this.cpu.SP); this.cpu.SP = (this.cpu.SP + 2) & 0xFFFF; return v; }
+  finish(msg){ this.state = 'done'; this.msg = msg; }
+  fail(msg, ins){ this.state = 'error'; this.msg = msg; this.errLine = ins ? ins.line : -1; }
+
+  step(){
+    if (this.state === 'done' || this.state === 'error' || this.state === 'wait') return false;
+    const ins = this.prog.instrs[this.idx];
+    if (!ins){ this.finish('El código terminó sin llamar a INT 21h (AH=4Ch) ni RET.'); return false; }
+    this.lastIdx = this.idx;
+    let next = this.idx + 1;
+    try { next = this.exec(ins, next); }
+    catch (e){ this.fail(e.message, ins); return false; }
+    this.steps++;
+    if (this.state === 'wait' || this.state === 'done') return true;
+    this.advance(next);
+    if (this.steps >= STEP_LIMIT && this.state === 'ready') this.fail('Se detuvo tras ' + STEP_LIMIT + ' pasos: ¿hay un bucle infinito?', ins);
+    return true;
+  }
+  advance(next){
+    this.idx = next;
+    const n = this.prog.instrs[next];
+    if (n) this.cpu.IP = n.ip; else this.finish('El código terminó sin llamar a INT 21h (AH=4Ch) ni RET.');
+  }
+  provideKey(code){
+    if (this.state !== 'wait'){ if (this.keybuf.length < 16) this.keybuf.push(code); return false; }
+    const w = this.wait; this.wait = null; this.state = 'ready';
+    this.setReg('AL', code);
+    if (w.echo) this.screen.put(code);
+    this.advance(this.idx + 1);
+    return true;
+  }
+  needKey(echo){
+    if (this.keybuf.length){ const k = this.keybuf.shift(); this.setReg('AL', k); if (echo) this.screen.put(k); return false; }
+    this.state = 'wait'; this.wait = {echo}; return true;
+  }
+
+  exec(ins, next){
+    const c = this.cpu, op = ins.op, [a, b] = ins.args;
+    switch (op){
+      case 'mov': {
+        const s = this.sz(a, b); this.chk(a, b, s);
+        if (a.k === 'reg' && SEGR.includes(a.n) && b.k === 'imm') throw new Error('No se puede mover un valor directo a un registro de segmento: usa un registro intermedio (mov ax, ...; mov ' + a.n.toLowerCase() + ', ax)');
+        if (a.k === 'imm') throw new Error('El destino de MOV no puede ser un número');
+        if (a.k === 'mem' && b.k === 'mem') throw new Error('MOV no permite memoria a memoria: pasa el dato por un registro');
+        this.write(a, this.read(b, s), s); break;
+      }
+      case 'add': case 'sub': case 'cmp': case 'and': case 'or': case 'xor': case 'test': {
+        const s = this.sz(a, b); this.chk(a, b, s);
+        if (a.k === 'imm') throw new Error('El destino no puede ser un número');
+        const x = this.read(a, s), y = this.read(b, s); let r;
+        if (op === 'add') r = this.add(x, y, s);
+        else if (op === 'sub' || op === 'cmp') r = this.sub(x, y, s);
+        else { r = (op === 'and' || op === 'test') ? (x & y) : (op === 'or' ? (x | y) : (x ^ y)); this.logic(r, s); }
+        if (op !== 'cmp' && op !== 'test') this.write(a, r, s);
+        break;
+      }
+      case 'inc': case 'dec': {
+        const s = this.sz(a, null), cf = c.CF;
+        const r = op === 'inc' ? this.add(this.read(a, s), 1, s) : this.sub(this.read(a, s), 1, s);
+        c.CF = cf; this.write(a, r, s); break;
+      }
+      case 'neg': { const s = this.sz(a, null), x = this.read(a, s); const r = this.sub(0, x, s); c.CF = x !== 0 ? 1 : 0; this.write(a, r, s); break; }
+      case 'not': { const s = this.sz(a, null); this.write(a, (~this.read(a, s)) & mask(s), s); break; }
+      case 'mul': {
+        const s = this.sz(a, null), y = this.read(a, s);
+        if (s === 8){ const p = (c.AX & 255) * y; c.AX = p & 0xFFFF; c.CF = c.OF = (p > 255) ? 1 : 0; }
+        else { const p = c.AX * y; c.AX = p & 0xFFFF; c.DX = Math.floor(p / 65536) & 0xFFFF; c.CF = c.OF = c.DX !== 0 ? 1 : 0; }
+        break;
+      }
+      case 'div': {
+        const s = this.sz(a, null), d = this.read(a, s);
+        if (d === 0) throw new Error('División entre cero');
+        if (s === 8){ const q = Math.floor(c.AX / d), r = c.AX % d; if (q > 255) throw new Error('Desbordamiento en DIV: el cociente no cabe en AL'); c.AX = ((r & 255) << 8) | q; }
+        else { const dv = c.DX * 65536 + c.AX, q = Math.floor(dv / d), r = dv % d; if (q > 0xFFFF) throw new Error('Desbordamiento en DIV: el cociente no cabe en AX'); c.AX = q; c.DX = r; }
+        break;
+      }
+      case 'shl': case 'sal': case 'shr': case 'sar': {
+        const s = this.sz(a, null); let n = b.k === 'imm' ? b.v : (b.n === 'CL' ? c.CX & 255 : (() => { throw new Error('El contador del desplazamiento debe ser un número o CL'); })());
+        n &= 31; let v = this.read(a, s);
+        for (let i = 0; i < n; i++){
+          if (op === 'shl' || op === 'sal'){ c.CF = (v & sbit(s)) ? 1 : 0; v = (v << 1) & mask(s); }
+          else { c.CF = v & 1; const sign = v & sbit(s); v = (v >> 1) | (op === 'sar' ? sign : 0); }
+        }
+        if (n){ this.flagsZS(v, s); this.write(a, v, s); }
+        break;
+      }
+      case 'xchg': { const s = this.sz(a, b); this.chk(a, b, s); const x = this.read(a, s), y = this.read(b, s); this.write(a, y, s); this.write(b, x, s); break; }
+      case 'lea': {
+        if (a.k !== 'reg' || a.size !== 16) throw new Error('LEA necesita un registro de 16 bits como destino');
+        if (b.k !== 'mem') throw new Error('LEA necesita una dirección de memoria como origen');
+        this.setReg(a.n, this.ea(b)); break;
+      }
+      case 'push': { const s = 16; this.push(a.k === 'imm' ? a.v : this.read(a, a.size || s)); break; }
+      case 'pop': { if (a.k === 'imm') throw new Error('POP necesita un registro o memoria'); this.write(a, this.pop(), 16); break; }
+      case 'jmp': return a.idx;
+      case 'loop': { c.CX = (c.CX - 1) & 0xFFFF; return c.CX !== 0 ? a.idx : next; }
+      case 'call': { this.push(this.idx + 1); return a.idx; }
+      case 'ret': {
+        if (c.SP === 0xFFFE){ this.finish('Programa terminado (RET).'); return next; }
+        return this.pop();
+      }
+      case 'int': this.doInt(a.v & 255, ins); break;
+      case 'nop': case 'cld': case 'std': break;
+      case 'hlt': this.finish('Programa detenido con HLT.'); break;
+      case 'cbw': c.AX = (c.AX & 0x80) ? (0xFF00 | (c.AX & 255)) : (c.AX & 255); break;
+      case 'cwd': c.DX = (c.AX & 0x8000) ? 0xFFFF : 0; break;
+      case 'clc': c.CF = 0; break;
+      case 'stc': c.CF = 1; break;
+      case 'cmc': c.CF = c.CF ? 0 : 1; break;
+      default:
+        if (JCC[op]) return JCC[op](c) ? a.idx : next;
+        throw new Error('Instrucción no soportada: ' + op);
+    }
+    return next;
+  }
+
+  doInt(n, ins){
+    const c = this.cpu, ah = c.AX >> 8, al = c.AX & 255, sc = this.screen;
+    if (n === 0x10){
+      switch (ah){
+        case 0x00: sc.reset((al & 0x7F) <= 1 ? 40 : 80); return;
+        case 0x01: return;
+        case 0x02: sc.cy = Math.min(sc.rows - 1, c.DX >> 8); sc.cx = Math.min(sc.cols - 1, c.DX & 255); return;
+        case 0x03: this.setReg('DH', sc.cy); this.setReg('DL', sc.cx); c.CX = 0x0607; return;
+        case 0x06: case 0x07:
+          sc.scroll(al, (c.BX >> 8) & 255, c.CX >> 8, c.CX & 255, c.DX >> 8, c.DX & 255, ah === 0x06); return;
+        case 0x08: { const i = sc.cy * sc.cols + sc.cx; c.AX = (sc.at[i] << 8) | sc.ch[i]; return; }
+        case 0x09: case 0x0A: {
+          const cnt = c.CX || 1;
+          for (let k = 0; k < cnt; k++){
+            const pos = sc.cy * sc.cols + sc.cx + k; if (pos >= sc.cols * sc.rows) break;
+            sc.ch[pos] = al; if (ah === 0x09) sc.at[pos] = c.BX & 255;
+          }
+          return;
+        }
+        case 0x0E: sc.put(al); return;
+        case 0x0F: c.AX = (sc.cols << 8) | sc.mode; return;
+        default: throw new Error('INT 10h con AH=' + hex(ah, 2) + 'h no está soportada en este simulador');
+      }
+    }
+    if (n === 0x21){
+      switch (ah){
+        case 0x02: sc.put(c.DX & 255); return;
+        case 0x09: { let a = c.DX; for (let k = 0; k < 4096 && this.mem[a & 0xFFFF] !== 0x24; k++, a++) sc.put(this.mem[a & 0xFFFF]); return; }
+        case 0x01: this.needKey(true); return;
+        case 0x07: case 0x08: this.needKey(false); return;
+        case 0x4C: this.finish('Programa terminado (INT 21h, AH=4Ch, código ' + hex(al, 2) + 'h).'); return;
+        default: throw new Error('INT 21h con AH=' + hex(ah, 2) + 'h no está soportada en este simulador');
+      }
+    }
+    if (n === 0x20){ this.finish('Programa terminado (INT 20h).'); return; }
+    if (n === 0x16){
+      if (ah === 0x00){ this.needKey(false); return; }
+      if (ah === 0x01){ c.ZF = this.keybuf.length ? 0 : 1; return; }
+      throw new Error('INT 16h con AH=' + hex(ah, 2) + 'h no está soportada en este simulador');
+    }
+    throw new Error('INT ' + hex(n, 2) + 'h no está soportada en este simulador');
+  }
+}
+/*ENGINE_END*/
+
+/*DATA_START*/
+const EXAMPLES = [
+{ id:'barras', group:'BIBLIOTECA', title:'Barras (INT 10h)', file:'20241_ADC_UL_xBarras.asm',
+  thumb:true,
+  desc:'Dibuja las letras «UL» con cinco barras rojas (tres verticales y dos horizontales) usando INT 10h, función 06h.',
+  learn:'Dibujar en modo texto con INT 10h/06h: cada llamada pinta un rectángulo definido por esquina superior izquierda (CH:CL), esquina inferior derecha (DH:DL) y color (BH). Reutiliza las filas y mueve solo las columnas con ADD.',
+  tags:['INT 10h','Colores','ADD','Plantilla EXE'],
+  code:`data segment                ; ===== SEGMENTO DE DATOS =====
+    pkey db " ", "$"        ; variable que trae la plantilla (aquí no se usa)
+ends
+stack segment               ; ===== SEGMENTO DE PILA =====
+    dw 128 dup(0)           ; reserva 128 palabras (256 bytes) para la pila
+ends
+
+code segment                ; ===== SEGMENTO DE CÓDIGO =====
+start:                      ; el programa empieza aquí
+    mov ax, data            ; AX = dirección del segmento de datos
+    mov ds, ax              ; DS apunta a los datos (un valor no se puede mover directo a DS)
+
+    mov ah, 00              ; INT 10h, función 00h: fijar el modo de video
+    mov al, 0               ; modo 0 = texto 40x25. AL=0 se reutiliza abajo ("pintar toda la ventana")
+    int 10h                 ; aplica el modo y limpia la pantalla
+    ;BV1  (barra vertical 1)
+    mov di, 00              ; DI no se usa en este dibujo (se conserva del original)
+    mov ah, 06              ; INT 10h, función 06h: desplazar / pintar una ventana de texto
+    mov ch, 06              ; CH = fila superior (6)
+    mov cl, 10              ; CL = columna izquierda (10)
+    mov dh, 16              ; DH = fila inferior (16)
+    mov dl, 11              ; DL = columna derecha (11)
+    mov bh, 0cfh            ; BH = color: fondo C (rojo claro) + texto F (blanco)
+    int 10h                 ; pinta el rectángulo (AL=0 rellena toda la ventana)
+
+    ;BV2
+    add cl, 6               ; mueve la columna izquierda 6 a la derecha (10 -> 16)
+    add dl, 6               ; igual con la derecha (11 -> 17)
+    mov bh, 0cfh            ; mismo color rojo
+    int 10h                 ; segunda barra (las filas CH y DH no cambian)
+
+    ;BV3
+    add cl, 4               ; 16 -> 20
+    add dl, 4               ; 17 -> 21
+    mov bh, 0cfh            ; mismo color rojo
+    int 10h                 ; tercera barra
+
+    ;BH1  (barra horizontal 1)
+    mov di, 00
+    mov ah, 06              ; vuelve a indicar la función 06h
+    mov ch, 17              ; fila superior = 17 (justo debajo de las verticales)
+    mov cl, 10              ; columna izquierda = 10
+    mov dh, 18              ; fila inferior = 18 (2 filas de alto)
+    mov dl, 17              ; columna derecha = 17
+    mov bh, 0cfh
+    int 10h                 ; pinta la primera barra horizontal
+
+    ;BH2
+    add cl, 10              ; 10 -> 20
+    add dl, 10              ; 17 -> 27
+    mov bh, 0cfh
+    int 10h                 ; segunda barra horizontal
+
+    ret                     ; termina el programa; lo que sigue ya no se ejecuta
+
+    mov ah, 1               ; (sobrante de la plantilla) esperaría una tecla con INT 21h
+    int 21h
+    mov ax, 4c00h           ; (sobrante) terminar con código 0
+    int 21h
+ends
+
+ends start                  ; fin del programa; 'start' es el punto de entrada
+` },
+{ id:'rectU', group:'BIBLIOTECA', title:'Rectángulo con una U', file:'rectangulo_U.asm',
+  thumb:true,
+  desc:'Un rectángulo azul con una letra «U» blanca centrada, armada con tres ventanas de color.',
+  learn:'Componer una figura por capas: primero el fondo (rectángulo grande) y encima las piezas de la letra. Cada pieza es una ventana de INT 10h/06h; para centrarla se calcula la mitad del ancho y del alto del rectángulo.',
+  tags:['INT 10h','Capas','Centrar figuras','Colores'],
+  code:`data segment                ; ===== SEGMENTO DE DATOS =====
+    pkey db " ", "$"        ; variable de la plantilla (no se usa)
+ends
+stack segment               ; ===== SEGMENTO DE PILA =====
+    dw 128 dup(0)           ; 128 palabras de pila
+ends
+
+code segment                ; ===== SEGMENTO DE CÓDIGO =====
+start:
+    mov ax, data            ; AX = segmento de datos
+    mov ds, ax              ; DS = AX
+
+    mov ah, 00              ; INT 10h, función 00h: modo de video
+    mov al, 0               ; modo 0 (texto 40x25); AL queda en 0 para pintar ventanas completas
+    int 10h                 ; limpia la pantalla
+
+    ;RECTANGULO (fondo)  columnas 10-29 (20 de ancho), filas 4-20 (17 de alto)
+    mov ah, 06              ; función 06h: pintar una ventana
+    mov ch, 04              ; fila superior = 4
+    mov cl, 10              ; columna izquierda = 10
+    mov dh, 20              ; fila inferior = 20
+    mov dl, 29              ; columna derecha = 29
+    mov bh, 09fh            ; fondo 9 (azul claro) + texto F (blanco)
+    int 10h                 ; pinta el rectángulo azul
+
+    ;U_IZQUIERDA  (palo izquierdo de la letra)
+    mov ah, 06              ; se vuelve a indicar la función
+    mov ch, 07              ; fila superior = 7 (3 filas de margen bajo el borde del rectángulo)
+    mov cl, 14              ; columna izquierda = 14
+    mov dh, 17              ; fila inferior = 17
+    mov dl, 16              ; columna derecha = 16 (palo de 3 columnas)
+    mov bh, 0ffh            ; fondo F (blanco): el "pincel" blanco
+    int 10h                 ; pinta el palo izquierdo
+
+    ;U_DERECHA  (palo derecho; solo cambian las columnas)
+    mov ah, 06
+    mov cl, 23              ; columna izquierda = 23
+    mov dl, 25              ; columna derecha = 25
+    mov bh, 0ffh
+    int 10h                 ; pinta el palo derecho (mismas filas 7-17)
+
+    ;U_BASE  (la curva de abajo une los dos palos)
+    mov ah, 06
+    mov ch, 15              ; fila superior = 15
+    mov cl, 14              ; desde el palo izquierdo...
+    mov dh, 17              ; fila inferior = 17 (base de 3 filas)
+    mov dl, 25              ; ...hasta el palo derecho
+    mov bh, 0ffh
+    int 10h                 ; pinta la base: ya se ve una U
+
+    ret                     ; termina el programa
+
+    mov ah, 1               ; (sobrante de la plantilla) esperar una tecla
+    int 21h
+    mov ax, 4c00h           ; (sobrante) terminar con código 0
+    int 21h
+ends
+
+ends start                  ; fin; punto de entrada: start
+` },
+{ id:'bandera', group:'BIBLIOTECA', title:'Bandera con bucles', file:'ejemplo2.asm',
+  thumb:true,
+  desc:'Franjas rojo-blanco-rojo dibujadas fila por fila con bucles: una bandera vertical tricolor.',
+  learn:'Bucles con etiqueta + CMP + JNE. Una variable (DI) cuenta las repeticiones, y en cada vuelta se baja una fila (ADD CH,1 / ADD DH,1). Se repite el patrón para cada franja.',
+  tags:['INT 10h','Bucles','CMP / JNE','Colores'],
+  code:`data segment                ; ===== SEGMENTO DE DATOS =====
+    pkey db " ", "$"        ; variable de la plantilla (no se usa)
+ends
+stack segment               ; ===== SEGMENTO DE PILA =====
+    dw 128 dup(0)           ; 128 palabras de pila
+ends
+
+code segment                ; ===== SEGMENTO DE CÓDIGO =====
+start:
+    mov ax, data            ; AX = segmento de datos
+    mov ds, ax              ; DS = AX
+
+    mov ah, 00              ; INT 10h, función 00h: modo de video
+    mov al, 0               ; modo 0 (40x25); AL=0 también sirve para pintar ventanas
+    int 10h                 ; limpia la pantalla
+
+    ; --- FRANJA IZQUIERDA (roja) ---
+    mov di, 00              ; DI = contador de filas pintadas
+    mov ah, 06              ; función 06h: pintar ventana
+    mov ch, 06              ; fila superior = 6
+    mov cl, 10              ; columna izquierda = 10
+    mov dh, 06              ; fila inferior = 6 (la ventana mide 1 fila)
+    mov dl, 16              ; columna derecha = 16
+    mov bh, 0cfh            ; rojo claro
+    int 10h                 ; pinta la primera fila
+ri: mov ah, 06              ; etiqueta 'ri': inicio del bucle de la franja roja izquierda
+    add ch, 1               ; baja una fila (arriba)
+    add dh, 1               ; baja una fila (abajo)
+    mov bh, 0cfh            ; color rojo
+    int 10h                 ; pinta esa fila
+    inc di                  ; una fila más pintada
+    cmp di, 0ah             ; ¿ya van 10 (0Ah) filas?
+    jne ri                  ; si no, repite
+
+    ; --- FRANJA CENTRAL (blanca) ---
+    mov di, 00              ; reinicia el contador
+    mov ah, 06
+    mov ch, 06              ; vuelve a la fila 6
+    mov cl, 17              ; columna izquierda = 17
+    mov dh, 06
+    mov dl, 23              ; columna derecha = 23
+    mov bh, 0ffh            ; fondo blanco (F) con texto blanco
+    int 10h
+blanco: mov ah, 06          ; etiqueta 'blanco': bucle de la franja blanca
+    add ch, 1
+    add dh, 1
+    mov bh, 0ffh
+    int 10h
+    inc di
+    cmp di, 0ah
+    jne blanco
+
+    ; --- FRANJA DERECHA (roja) ---
+    mov di, 00
+    mov ah, 06
+    mov ch, 06
+    mov cl, 24              ; columna izquierda = 24
+    mov dh, 06
+    mov dl, 30              ; columna derecha = 30
+    mov bh, 0cfh
+    int 10h
+rd: mov ah, 06              ; etiqueta 'rd': bucle de la franja roja derecha
+    add ch, 1
+    add dh, 1
+    mov bh, 0cfh
+    int 10h
+    inc di
+    cmp di, 0ah
+    jne rd
+    ret                     ; termina el programa
+
+    mov ah, 1               ; (sobrante de la plantilla) esperar una tecla
+    int 21h
+    mov ax, 4c00h           ; (sobrante) terminar con código 0
+    int 21h
+ends
+
+ends start                  ; fin; punto de entrada: start
+` },
+{ id:'asta', group:'BIBLIOTECA', title:'Bandera con asta', file:'bandera_asta.asm',
+  thumb:true,
+  desc:'Bandera de franjas horizontales (amarillo, azul y rojo) dibujadas fila por fila con bucles, más su asta: una sola barra vertical.',
+  learn:'Lo mismo que la bandera vertical, pero girado: aquí cada franja es horizontal, así que el bucle baja de fila (ADD CH,1 / ADD DH,1) y las columnas no cambian. Tres bucles, uno por franja, y el asta se dibuja con una única llamada: no todo necesita un bucle.',
+  tags:['INT 10h','Bucles','CMP / JNE','Colores'],
+  code:`data segment                ; ===== SEGMENTO DE DATOS =====
+    pkey db " ", "$"        ; variable de la plantilla (no se usa)
+ends
+stack segment               ; ===== SEGMENTO DE PILA =====
+    dw 128 dup(0)           ; 128 palabras de pila
+ends
+
+code segment                ; ===== SEGMENTO DE CÓDIGO =====
+start:
+    mov ax, data            ; AX = segmento de datos
+    mov ds, ax              ; DS = AX
+
+    mov ah, 00              ; INT 10h, función 00h: modo de video
+    mov al, 0               ; modo 0 (texto 40x25); AL queda en 0 para pintar ventanas completas
+    int 10h                 ; limpia la pantalla
+
+    ; --- ASTA (una sola barra vertical, sin bucle) ---
+    mov ah, 06              ; función 06h: pintar una ventana
+    mov ch, 04              ; fila superior = 4
+    mov cl, 08              ; columna izquierda = 8
+    mov dh, 22              ; fila inferior = 22 (la barra baja hasta el "suelo")
+    mov dl, 09              ; columna derecha = 9 (2 columnas de ancho)
+    mov bh, 06fh            ; fondo 6 (marrón) + texto F
+    int 10h                 ; dibuja el asta con una sola llamada
+
+    ; --- FRANJA 1 (amarilla): filas 4 a 7 ---
+    mov di, 00              ; DI = contador de filas ya repetidas
+    mov ah, 06              ; función 06h
+    mov ch, 04              ; fila superior = 4
+    mov cl, 10              ; columna izquierda = 10 (pegada al asta)
+    mov dh, 04              ; fila inferior = 4 (la ventana mide 1 fila)
+    mov dl, 29              ; columna derecha = 29
+    mov bh, 0efh            ; fondo E (amarillo)
+    int 10h                 ; pinta la primera fila
+amarillo: mov ah, 06        ; etiqueta 'amarillo': inicio del bucle
+    add ch, 1               ; baja una fila (arriba)
+    add dh, 1               ; baja una fila (abajo)
+    mov bh, 0efh            ; color amarillo
+    int 10h                 ; pinta esa fila
+    inc di                  ; una fila más
+    cmp di, 3               ; ¿ya se repitió 3 veces? (1 + 3 = 4 filas)
+    jne amarillo            ; si no, repite
+
+    ; --- FRANJA 2 (azul): filas 8 a 11 ---
+    mov di, 00              ; reinicia el contador
+    mov ah, 06
+    mov ch, 08              ; empieza justo debajo de la franja amarilla
+    mov dh, 08              ; ventana de 1 fila (las columnas siguen igual)
+    mov bh, 09fh            ; fondo 9 (azul claro)
+    int 10h
+azul: mov ah, 06            ; etiqueta 'azul': bucle de la franja azul
+    add ch, 1
+    add dh, 1
+    mov bh, 09fh
+    int 10h
+    inc di
+    cmp di, 3
+    jne azul
+
+    ; --- FRANJA 3 (roja): filas 12 a 15 ---
+    mov di, 00
+    mov ah, 06
+    mov ch, 12              ; empieza justo debajo de la franja azul
+    mov dh, 12
+    mov bh, 0cfh            ; fondo C (rojo claro)
+    int 10h
+rojo: mov ah, 06            ; etiqueta 'rojo': bucle de la franja roja
+    add ch, 1
+    add dh, 1
+    mov bh, 0cfh
+    int 10h
+    inc di
+    cmp di, 3
+    jne rojo
+
+    ret                     ; termina el programa
+
+    mov ah, 1               ; (sobrante de la plantilla) esperar una tecla
+    int 21h
+    mov ax, 4c00h           ; (sobrante) terminar con código 0
+    int 21h
+ends
+
+ends start                  ; fin; punto de entrada: start
+` },
+{ id:'cuadrado', group:'BIBLIOTECA', title:'Fondo y cuadrado', file:'fondo_cuadrado.asm',
+  thumb:true,
+  desc:'Pinta toda la pantalla de un color y encima un cuadrado de otro. Sirve para practicar cómo cambiar colores, posición y tamaño.',
+  learn:'Dos números controlan todo: BH elige los colores (primer dígito = fondo, segundo = texto) y CH, CL, DH, DL fijan la esquina superior izquierda y la inferior derecha. Cambia esos valores y vuelve a ejecutar para ver el efecto.',
+  tags:['INT 10h','Colores','Tamaños','Para experimentar'],
+  code:`data segment                ; ===== SEGMENTO DE DATOS =====
+    pkey db " ", "$"        ; variable de la plantilla (no se usa)
+ends
+stack segment               ; ===== SEGMENTO DE PILA =====
+    dw 128 dup(0)           ; 128 palabras de pila
+ends
+
+; ===== CÓMO CAMBIAR COLORES (registro BH = dos dígitos hexadecimales) =====
+;   primer dígito  = color de FONDO   (es el que se ve al pintar un bloque)
+;   segundo dígito = color del TEXTO  (aquí no se ve porque no hay letras)
+;   0 negro      1 azul        2 verde      3 cian
+;   4 rojo       5 magenta     6 marrón     7 gris
+;   8 gris osc.  9 azul claro  A verde cl.  B cian claro
+;   C rojo claro D magenta cl. E amarillo   F blanco
+; ===== CÓMO CAMBIAR EL TAMAÑO Y LA POSICIÓN =====
+;   CH = fila superior    CL = columna izquierda   (esquina superior izquierda)
+;   DH = fila inferior    DL = columna derecha     (esquina inferior derecha)
+;   ancho = DL - CL + 1   alto = DH - CH + 1
+;   En modo 0 la pantalla tiene 25 filas (0-24) y 40 columnas (0-39)
+
+code segment                ; ===== SEGMENTO DE CÓDIGO =====
+start:
+    mov ax, data            ; AX = segmento de datos
+    mov ds, ax              ; DS = AX
+
+    mov ah, 00              ; INT 10h, función 00h: modo de video
+    mov al, 0               ; modo 0 (texto 40x25); AL queda en 0 para pintar ventanas completas
+    int 10h                 ; limpia la pantalla
+
+    ;FONDO  (toda la pantalla)
+    mov ah, 06              ; función 06h: pintar una ventana
+    mov ch, 00              ; fila superior = 0 (primera fila)
+    mov cl, 00              ; columna izquierda = 0 (primera columna)
+    mov dh, 24              ; fila inferior = 24 (última fila)
+    mov dl, 39              ; columna derecha = 39 (última columna)
+    mov bh, 01fh            ; fondo 1 (azul) + texto F. Prueba 02fh (verde), 04fh (rojo)...
+    int 10h                 ; pinta el fondo azul
+
+    ;CUADRADO  (9 filas x 9 columnas, más o menos al centro)
+    mov ah, 06              ; se vuelve a indicar la función
+    mov ch, 08              ; fila superior = 8
+    mov cl, 15              ; columna izquierda = 15
+    mov dh, 16              ; fila inferior = 16  -> alto = 16 - 8 + 1 = 9
+    mov dl, 23              ; columna derecha = 23 -> ancho = 23 - 15 + 1 = 9
+    mov bh, 0efh            ; fondo E (amarillo). Prueba 0cfh (rojo claro), 0ffh (blanco)...
+    int 10h                 ; pinta el cuadrado encima del fondo
+
+    ret                     ; termina el programa
+
+    mov ah, 1               ; (sobrante de la plantilla) esperar una tecla
+    int 21h
+    mov ax, 4c00h           ; (sobrante) terminar con código 0
+    int 21h
+ends
+
+ends start                  ; fin; punto de entrada: start
+` }
+];
+/*DATA_END*/
+
+/* ============================ UI ============================ */
+(function(){
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Typer del hero ---------- */
+(function(){
+  const el = $('typer');
+  const lines = [
+    ['pr','C:\\EMU8086&gt; ','mov ax, 1234h'],
+    ['dm','            ; AX = 1234h   (AH=12h, AL=34h)',''],
+    ['pr','C:\\EMU8086&gt; ','add ax, 0FFFFh'],
+    ['dm','            ; AX = 1233h   CF=1  ZF=0  SF=0',''],
+    ['pr','C:\\EMU8086&gt; ','int 21h'],
+    ['am','            ; ¡Vamos a aprender cómo funciona cada línea!','']
+  ];
+  const html = lines.map(l => `<div><span class="${l[0]}">${l[1]}</span>${l[2] ? '<span class="am">'+l[2]+'</span>' : ''}</div>`);
+  if (reduce){ el.innerHTML = html.join('') ; return; }
+  let i = 0, out = '';
+  (function next(){
+    if (i >= lines.length){ el.innerHTML = out + '<div><span class="pr">C:\\EMU8086&gt; </span><span class="cursor"></span></div>'; return; }
+    const l = lines[i], plain = l[2];
+    let k = 0;
+    const base = out + `<div><span class="${l[0]}">${l[1]}</span>`;
+    (function type(){
+      if (!plain){ out = base + '</div>'; i++; el.innerHTML = out; setTimeout(next, 260); return; }
+      k++;
+      el.innerHTML = base + `<span class="am">${plain.slice(0,k)}</span><span class="cursor"></span></div>`;
+      if (k < plain.length) setTimeout(type, 55);
+      else { out = base + `<span class="am">${plain}</span></div>`; i++; setTimeout(next, 320); }
+    })();
+  })();
+})();
+
+/* ---------- Demo de banderas ---------- */
+(function(){
+  const h = s => { const v = parseInt((s||'').replace(/[^0-9a-f]/gi,''), 16); return isNaN(v) ? 0 : v; };
+  // banderas
+  const fA = $('fA'), fB = $('fB'), fOp = $('fOp');
+  function fl(){
+    const a = h(fA.value) & 255, b = h(fB.value) & 255, op = fOp.value;
+    let full, r;
+    if (op === 'add'){ full = a + b; r = full & 255; var cf = full > 255 ? 1 : 0; }
+    else { r = (a - b) & 255; cf = a < b ? 1 : 0; }
+    const zf = r === 0 ? 1 : 0, sf = (r & 128) ? 1 : 0;
+    $('fR').textContent = (op === 'cmp' ? 'no se guarda ' : '') + hex(r, 2) + 'h';
+    [['fZF','ZF',zf],['fCF','CF',cf],['fSF','SF',sf]].forEach(([id,n,v]) => { const e = $(id); e.innerHTML = n + ' = <b>' + v + '</b>'; e.classList.toggle('on', !!v); });
+    const why = [];
+    why.push(zf ? 'ZF=1: el resultado es 0.' : 'ZF=0: el resultado no es 0.');
+    why.push(cf ? (op === 'add' ? 'CF=1: la suma pasó de FFh (hubo acarreo).' : 'CF=1: A es menor que B (hubo préstamo).') : 'CF=0: no hubo acarreo/préstamo.');
+    why.push(sf ? 'SF=1: el bit más alto del resultado es 1 (negativo en complemento a 2).' : 'SF=0: el bit más alto es 0.');
+    $('fWhy').textContent = why.join(' ');
+  }
+  [fA, fB].forEach(e => e.addEventListener('input', fl)); fOp.addEventListener('change', fl); fl();
+})();
+
+/* ---------- Progreso de los pasos ---------- */
+(function(){
+  const steps = [...document.querySelectorAll('#steps .step')];
+  function upd(){
+    const n = steps.filter(s => s.classList.contains('done')).length;
+    $('progLabel').textContent = `Progreso: ${n} de ${steps.length} pasos` + (n === steps.length ? ' ✔ ¡listo para el laboratorio!' : '');
+    $('progBar').style.width = (n / steps.length * 100) + '%';
+  }
+  steps.forEach(s => s.querySelector('.tick').addEventListener('click', e => {
+    s.classList.toggle('done');
+    e.currentTarget.textContent = s.classList.contains('done') ? '☑ Hecho' : '☐ Marcar como hecho';
+    upd();
+  }));
+  upd();
+})();
+
+/* ---------- Pantalla (canvas) ---------- */
+function drawScreen(cv, scr, cursorOn){
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, cw = W / scr.cols, chh = H / scr.rows;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  for (let y = 0; y < scr.rows; y++) for (let x = 0; x < scr.cols; x++){
+    const bg = scr.at[y * scr.cols + x] >> 4;
+    if (bg){ ctx.fillStyle = PAL[bg]; ctx.fillRect(Math.floor(x * cw), Math.floor(y * chh), Math.ceil(cw), Math.ceil(chh)); }
+  }
+  const fp = chh * 0.78;
+  ctx.font = fp + 'px ui-monospace, Menlo, Consolas, "DejaVu Sans Mono", monospace';
+  ctx.textBaseline = 'middle';
+  const sx = cw / (fp * 0.6);
+  for (let y = 0; y < scr.rows; y++) for (let x = 0; x < scr.cols; x++){
+    const i = y * scr.cols + x, c = scr.ch[i];
+    if (c === 32 || c === 0) continue;
+    ctx.save(); ctx.translate(x * cw, y * chh + chh / 2); ctx.scale(sx, 1);
+    ctx.fillStyle = PAL[scr.at[i] & 15]; ctx.fillText(String.fromCharCode(c), 0, 0); ctx.restore();
+  }
+  if (cursorOn) { ctx.fillStyle = PAL[7]; ctx.fillRect(scr.cx * cw, (scr.cy + 1) * chh - chh * 0.16, cw, chh * 0.13); }
+}
+
+/* ---------- Estado del laboratorio ---------- */
+const tabs = EXAMPLES.map(e => ({...e, text: e.code}));
+let cur = 0, prog = null, M = null, dummy = new Machine({instrs:[], mem:[], entry:0, vars:{}, labels:{}});
+let snapPrev = null, running = false, timer = null, blink = true, lineEls = [], gutEls = [], lastCode = '';
+const ta = $('code'), backdrop = $('backdrop'), gutter = $('gutter');
+const view = () => M || dummy;
+
+/* resaltado de sintaxis */
+const MN = Object.keys(ARITY).join('|');
+const TOKRE = new RegExp('("[^"]*"|\'[^\']*\')|(\\b(?:ax|bx|cx|dx|si|di|sp|bp|ip|al|ah|bl|bh|cl|ch|dl|dh|cs|ds|es|ss)\\b)|(\\b[0-9][0-9a-f]*h\\b|\\b[01]+b\\b|\\b\\d+\\b)|(^\\s*[A-Za-z_@.][\\w@.]*\\s*:)|(\\b(?:' + MN + ')\\b)|(\\b(?:db|dw|dup|segment|ends|org|offset|ptr|byte|word|equ|proc|endp|end|assume|name)\\b)', 'gi');
+function hl(line){
+  const ci = findComment(line);
+  const code = ci >= 0 ? line.slice(0, ci) : line, cmt = ci >= 0 ? line.slice(ci) : '';
+  let out = '', last = 0, m; TOKRE.lastIndex = 0;
+  while ((m = TOKRE.exec(code))){
+    if (m[0] === ''){ TOKRE.lastIndex++; continue; }
+    out += esc(code.slice(last, m.index));
+    const cls = m[1] ? 't-s' : m[2] ? 't-r' : m[3] ? 't-n' : m[4] ? 't-l' : m[5] ? 't-m' : 't-d';
+    out += '<span class="' + cls + '">' + esc(m[0]) + '</span>'; last = m.index + m[0].length;
+  }
+  out += esc(code.slice(last));
+  if (cmt) out += '<span class="t-c">' + esc(cmt) + '</span>';
+  return out || '&#8203;';
+}
+function buildEditor(){
+  const lines = ta.value.split('\n');
+  const inner = document.createElement('div'); inner.className = 'in';
+  const gin = document.createDocumentFragment();
+  lineEls = []; gutEls = [];
+  lines.forEach((l, i) => {
+    const d = document.createElement('div'); d.className = 'ln'; d.innerHTML = hl(l); inner.appendChild(d); lineEls.push(d);
+    const g = document.createElement('div'); g.textContent = i + 1; gin.appendChild(g); gutEls.push(g);
+  });
+  backdrop.replaceChildren(inner); gutter.replaceChildren(gin);
+  syncScroll();
+}
+function syncScroll(){ backdrop.scrollTop = ta.scrollTop; backdrop.scrollLeft = ta.scrollLeft; gutter.scrollTop = ta.scrollTop; }
+ta.addEventListener('scroll', syncScroll);
+function markLines(){
+  lineEls.forEach((e, i) => { e.classList.remove('cur','last','err'); gutEls[i].classList.remove('cur','err'); });
+  const set = (i, cls, g) => { if (lineEls[i]){ lineEls[i].classList.add(cls); if (g) gutEls[i].classList.add(g); } };
+  if (prog && !prog.ok){ prog.errors.forEach(e => set(e.line, 'err', 'err')); return; }
+  const m = M; if (!m) return;
+  if (m.state === 'error'){ set(m.errLine, 'err', 'err'); return; }
+  if (m.lastIdx >= 0 && m.steps > 0) set(m.prog.instrs[m.lastIdx].line, 'last');
+  if (m.state === 'ready' || m.state === 'wait'){
+    const n = m.prog.instrs[m.idx]; if (n) set(n.line, 'cur', 'cur');
+  }
+}
+function reveal(){
+  const m = M; if (!m) return;
+  const ins = m.prog.instrs[m.state === 'done' ? m.lastIdx : m.idx]; if (!ins || !lineEls[ins.line]) return;
+  const lh = lineEls[ins.line].offsetHeight || 20, top = ins.line * lh + 10, vh = ta.clientHeight;
+  if (top < ta.scrollTop + lh || top > ta.scrollTop + vh - 2 * lh) ta.scrollTop = Math.max(0, top - vh / 2);
+}
+
+/* registros */
+const REGS = ['AX','BX','CX','DX','SI','DI','SP','IP'];
+const regBody = document.querySelector('#regs tbody');
+REGS.forEach(r => {
+  const tr = document.createElement('tr'); tr.dataset.r = r;
+  tr.innerHTML = `<td>${r}</td><td class="h"></td><td class="d"></td><td class="d"></td><td class="d"></td>`; regBody.appendChild(tr);
+});
+function flash(el){ el.classList.remove('chg'); void el.offsetWidth; el.classList.add('chg'); }
+function renderRegs(){
+  const c = view().cpu, p = snapPrev || c;
+  regBody.querySelectorAll('tr').forEach(tr => {
+    const r = tr.dataset.r, v = c[r], t = tr.children;
+    t[1].textContent = hex(v) + 'h'; t[2].textContent = hex(v >> 8, 2); t[3].textContent = hex(v & 255, 2); t[4].textContent = v;
+    if (p[r] !== v){ flash(t[1]); if ((p[r] >> 8) !== (v >> 8)) flash(t[2]); if ((p[r] & 255) !== (v & 255)) flash(t[3]); }
+  });
+  document.querySelectorAll('#flags .flag').forEach(f => {
+    const n = f.dataset.f, v = c[n];
+    f.querySelector('b').textContent = v; f.classList.toggle('on', !!v);
+    if (p[n] !== v) flash(f);
+  });
+}
+
+/* explicación de la siguiente instrucción */
+const DESC = {
+  mov:(t)=>`Copia ${t[1]} en ${t[0]}. No modifica banderas.`,
+  add:(t)=>`${t[0]} = ${t[0]} + ${t[1]}. Actualiza ZF, CF y SF.`,
+  sub:(t)=>`${t[0]} = ${t[0]} − ${t[1]}. Actualiza ZF, CF y SF.`,
+  cmp:(t)=>`Compara ${t[0]} con ${t[1]} restando sin guardar el resultado. Solo cambian las banderas (ZF=1 si son iguales).`,
+  inc:(t)=>`Suma 1 a ${t[0]}. Actualiza ZF y SF; no toca CF.`,
+  dec:(t)=>`Resta 1 a ${t[0]}. Actualiza ZF y SF; no toca CF.`,
+  and:(t)=>`AND bit a bit entre ${t[0]} y ${t[1]}; el resultado queda en ${t[0]}.`,
+  or:(t)=>`OR bit a bit entre ${t[0]} y ${t[1]}; el resultado queda en ${t[0]}.`,
+  xor:(t)=>`XOR bit a bit entre ${t[0]} y ${t[1]} (xor r, r deja el registro en 0).`,
+  test:(t)=>`AND de ${t[0]} y ${t[1]} sin guardar el resultado: solo cambia las banderas.`,
+  neg:(t)=>`Cambia el signo de ${t[0]} (complemento a 2).`, not:(t)=>`Invierte todos los bits de ${t[0]}.`,
+  mul:(t)=>`Multiplica el acumulador (AL o AX) por ${t[0]}. El resultado ocupa AX (o DX:AX).`,
+  div:(t)=>`Divide AX (o DX:AX) entre ${t[0]}: cociente en AL (o AX) y residuo en AH (o DX).`,
+  shl:(t)=>`Desplaza los bits de ${t[0]} a la izquierda ${t[1]} vez/veces (multiplica por 2 por cada vuelta).`,
+  shr:(t)=>`Desplaza los bits de ${t[0]} a la derecha ${t[1]} vez/veces (divide entre 2 por cada vuelta).`,
+  xchg:(t)=>`Intercambia los valores de ${t[0]} y ${t[1]}.`,
+  lea:(t)=>`Guarda en ${t[0]} la dirección (no el contenido) de ${t[1]}.`,
+  push:(t)=>`Guarda ${t[0]} en la pila y baja SP en 2.`, pop:(t)=>`Saca el último valor de la pila hacia ${t[0]} y sube SP en 2.`,
+  jmp:(t)=>`Salta siempre a ${t[0]}.`,
+  loop:(t)=>`CX = CX − 1; si CX no es 0 salta a ${t[0]}, si es 0 sigue con la siguiente línea.`,
+  call:(t)=>`Llama a la rutina ${t[0]} guardando dónde volver.`, ret:()=>`Regresa de la rutina; en el programa principal, termina el programa.`,
+  nop:()=>'No hace nada.', hlt:()=>'Detiene el procesador.', cbw:()=>'Extiende el signo de AL hacia AH.', cwd:()=>'Extiende el signo de AX hacia DX.'
+};
+const JDESC = {je:'son iguales (ZF=1)',jz:'el resultado fue cero (ZF=1)',jne:'no son iguales (ZF=0)',jnz:'el resultado no fue cero (ZF=0)',jg:'mayor con signo',jl:'menor con signo',jge:'mayor o igual con signo',jle:'menor o igual con signo',ja:'mayor sin signo',jb:'menor sin signo',jae:'mayor o igual sin signo',jbe:'menor o igual sin signo',jc:'hubo acarreo (CF=1)',jnc:'no hubo acarreo (CF=0)',js:'resultado negativo (SF=1)',jns:'resultado no negativo (SF=0)',jcxz:'CX vale 0'};
+function describeInt(n, m){
+  const ah = m.cpu.AX >> 8, al = m.cpu.AX & 255;
+  if (n === 0x10){
+    const d = {0:`BIOS video, AH=00h: fija el modo de video ${hex(al,2)}h y limpia la pantalla.`,
+      6:`BIOS video, AH=06h: pinta/desplaza una ventana. AL=${al} líneas${al===0?' (0 = rellenar toda la ventana)':''}; color BH=${hex(m.cpu.BX>>8,2)}h; esquina sup. izq. fila ${m.cpu.CX>>8}, col ${m.cpu.CX&255}; inf. der. fila ${m.cpu.DX>>8}, col ${m.cpu.DX&255}.`,
+      2:`BIOS video, AH=02h: mueve el cursor a fila ${m.cpu.DX>>8}, columna ${m.cpu.DX&255}.`,
+      9:`BIOS video, AH=09h: escribe el carácter AL con el color BL, CX veces.`,
+      14:`BIOS video, AH=0Eh: escribe el carácter AL y avanza el cursor.`};
+    return d[ah] || `INT 10h (servicios de video) con AH=${hex(ah,2)}h.`;
+  }
+  if (n === 0x21){
+    const d = {9:'DOS, AH=09h: imprime el texto que empieza en DS:DX hasta encontrar el carácter $.',
+      2:`DOS, AH=02h: imprime el carácter de DL (${hex(m.cpu.DX&255,2)}h).`,
+      1:'DOS, AH=01h: espera una tecla, la muestra y la guarda en AL.', 7:'DOS, AH=07h: espera una tecla (sin mostrarla) y la guarda en AL.',
+      8:'DOS, AH=08h: espera una tecla (sin mostrarla) y la guarda en AL.', 0x4C:'DOS, AH=4Ch: termina el programa.'};
+    return d[ah] || `INT 21h (servicios de DOS) con AH=${hex(ah,2)}h.`;
+  }
+  return `Interrupción ${hex(n,2)}h.`;
+}
+function describe(ins, m){
+  if (ins.op === 'int') return describeInt(ins.args[0].v & 255, m);
+  const t = ins.args.map(a => a.txt);
+  if (JDESC[ins.op]) return `Salta a ${t[0]} si ${JDESC[ins.op]}; si no, sigue con la siguiente línea.`;
+  if (DESC[ins.op]) return DESC[ins.op](t);
+  return '';
+}
+function renderExplain(){
+  const ex = $('explain'), m = M;
+  ex.className = 'explain';
+  if (!m){ ex.classList.add('err'); ex.innerHTML = `<div class="tt">Error de ensamblado</div><div class="ins">Corrige el código para poder ejecutarlo</div>`; return; }
+  if (m.state === 'error'){ ex.classList.add('err'); ex.innerHTML = `<div class="tt">Error en ejecución · línea ${m.errLine + 1}</div><div class="ins">${esc(m.msg)}</div><div>Pulsa Reiniciar para volver a empezar.</div>`; return; }
+  if (m.state === 'done'){ ex.classList.add('done'); ex.innerHTML = `<div class="tt">Fin</div><div class="ins">${esc(m.msg)}</div><div>${m.steps} instrucciones ejecutadas. Pulsa Reiniciar para repetir.</div>`; return; }
+  const ins = m.prog.instrs[m.idx];
+  if (!ins) return;
+  if (m.state === 'wait'){ ex.innerHTML = `<div class="tt">Esperando teclado</div><div class="ins">${esc(ins.text)}</div><div>${esc(describe(ins, m))} Pulsa una tecla para continuar.</div>`; return; }
+  ex.innerHTML = `<div class="tt">Siguiente instrucción · línea ${ins.line + 1}</div><div class="ins">${esc(ins.text)}</div><div>${esc(describe(ins, m))}</div>`;
+}
+function renderStatus(){
+  const s = $('asmStatus');
+  if (prog && !prog.ok){ s.className = 'asm-status bad'; s.textContent = '✖ Línea ' + (prog.errors[0].line + 1) + ': ' + prog.errors[0].msg + (prog.errors.length > 1 ? '  (+' + (prog.errors.length - 1) + ' error(es) más)' : ''); }
+  else { s.className = 'asm-status good'; s.textContent = '✔ Ensamblado correctamente · ' + prog.instrs.length + ' instrucciones · ' + (M ? M.steps : 0) + ' ejecutadas'; }
+  const rs = $('runState'), m = M;
+  let k = 'ready', t = 'LISTO';
+  if (!m){ k = 'error'; t = 'ERROR'; }
+  else if (m.state === 'error'){ k = 'error'; t = 'ERROR'; }
+  else if (m.state === 'done'){ k = 'done'; t = 'TERMINADO'; }
+  else if (m.state === 'wait'){ k = 'wait'; t = 'ESPERANDO TECLA'; }
+  else if (running){ k = 'running'; t = 'EJECUTANDO'; }
+  else if (m.steps > 0){ t = 'EN PAUSA'; }
+  rs.className = 'runstate ' + k; rs.textContent = t;
+  $('btnRun').disabled = !m; $('btnStep').disabled = !m;
+  $('runIco').textContent = running ? '⏸' : '▶'; $('runTxt').textContent = running ? 'Pausar' : 'Ejecutar todo';
+  const kb = $('keyBar'), waiting = !!m && m.state === 'wait';
+  if (kb.hidden === waiting){ kb.hidden = !waiting; if (waiting) setTimeout(() => $('keyIn').focus({preventScroll:true}), 0); }
+  $('scrInfo').textContent = view().screen.cols + '×25';
+}
+function drawConsole(){ drawScreen($('screen'), view().screen, blink && (!M || M.state !== 'done')); }
+function renderAll(){ markLines(); renderRegs(); renderExplain(); renderStatus(); drawConsole(); }
+
+/* ---------- control ---------- */
+function stopRun(){ running = false; if (timer){ clearTimeout(timer); timer = null; } }
+function loadProgram(){
+  stopRun();
+  prog = assemble(ta.value);
+  M = prog.ok ? new Machine(prog) : null;
+  snapPrev = view().snapshot();
+  buildEditor(); renderAll(); reveal();
+}
+const SPEEDS = {slow:{n:1,d:550}, normal:{n:1,d:160}, fast:{n:3,d:60}, instant:{n:STEP_LIMIT,d:0}};
+function doReset(){ stopRun(); if (!M) return; M.reset(); snapPrev = M.snapshot(); renderAll(); ta.scrollTop = 0; reveal(); }
+function doStep(){
+  if (!M) return;
+  if (M.state === 'done' || M.state === 'error'){ doReset(); return; }
+  if (running){ stopRun(); }
+  snapPrev = M.snapshot(); M.step(); renderAll(); reveal();
+}
+function tick(){
+  timer = null; if (!running || !M) return;
+  const sp = SPEEDS[$('speed').value]; snapPrev = M.snapshot();
+  for (let i = 0; i < sp.n && M.state === 'ready'; i++) M.step();
+  renderAll(); reveal();
+  if (M.state === 'ready') timer = setTimeout(tick, sp.d);
+  else if (M.state !== 'wait') { running = false; renderStatus(); }
+}
+function doRun(){
+  if (!M) return;
+  if (running){ stopRun(); renderStatus(); return; }
+  if (M.state === 'done' || M.state === 'error'){ M.reset(); }
+  running = true; renderStatus(); tick();
+}
+$('btnRun').addEventListener('click', doRun);
+$('btnStep').addEventListener('click', doStep);
+$('btnReset').addEventListener('click', doReset);
+
+/* teclado */
+function sendKey(code){
+  if (!M) return;
+  const was = M.state === 'wait';
+  M.provideKey(code);
+  if (was){ snapPrev = M.snapshot(); renderAll(); reveal(); if (running && M.state === 'ready') timer = setTimeout(tick, 60); }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'F8'){ e.preventDefault(); doStep(); return; }
+  if (e.key === 'F9'){ e.preventDefault(); doRun(); return; }
+  if (M && M.state === 'wait' && e.target !== ta && e.target.id !== 'keyIn' && !e.ctrlKey && !e.metaKey && !e.altKey){
+    if (e.key.length === 1){ e.preventDefault(); sendKey(e.key.charCodeAt(0)); }
+    else if (e.key === 'Enter'){ e.preventDefault(); sendKey(13); }
+  }
+});
+$('keyIn').addEventListener('input', e => { const v = e.target.value; e.target.value = ''; if (v) sendKey(v.charCodeAt(0)); });
+$('keyIn').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); sendKey(13); } });
+$('speed').addEventListener('change', () => { if (running){ if (timer) clearTimeout(timer); tick(); } });
+
+/* editor */
+let deb = null;
+ta.addEventListener('input', () => {
+  tabs[cur].text = ta.value; buildEditor(); markLines();
+  clearTimeout(deb); deb = setTimeout(loadProgram, 160);
+  stopRun();
+});
+ta.addEventListener('keydown', e => {
+  if (e.key === 'Tab'){ e.preventDefault(); const s = ta.selectionStart; ta.setRangeText('    ', s, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input')); }
+});
+
+/* pestañas */
+function renderTabs(){
+  const box = $('tabs'); box.innerHTML = ''; let grp = '';
+  tabs.forEach((t, i) => {
+    const b = document.createElement('button'); b.className = 'tab'; b.type = 'button'; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', i === cur); b.id = 'tab-' + t.id; b.textContent = t.title;
+    b.addEventListener('click', () => selectTab(i)); box.appendChild(b);
+  });
+}
+function selectTab(i, noScroll){
+  cur = i; renderTabs();
+  const t = tabs[i]; ta.value = t.text; ta.scrollTop = 0; ta.scrollLeft = 0;
+  $('edFile').textContent = t.file; $('tabDesc').textContent = t.desc;
+  loadProgram();
+}
+async function copyText(txt, btn){
+  let ok = false;
+  try { await navigator.clipboard.writeText(txt); ok = true; } catch (_){}
+  if (!ok){
+    const x = document.createElement('textarea'); x.value = txt; x.style.cssText = 'position:fixed;opacity:0;top:0';
+    document.body.appendChild(x); x.select(); try { ok = document.execCommand('copy'); } catch (_){} x.remove();
+  }
+  const old = btn.dataset.o || btn.textContent; btn.dataset.o = old;
+  btn.textContent = ok ? '✔ ¡Copiado!' : '✖ No se pudo copiar'; setTimeout(() => btn.textContent = old, 1600);
+}
+function download(name, txt){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt.replace(/\n/g, '\r\n')], {type:'text/plain'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('btnCopy').addEventListener('click', e => copyText(ta.value, e.currentTarget));
+$('btnDl').addEventListener('click', () => download(tabs[cur].file, ta.value));
+$('btnRestore').addEventListener('click', () => { tabs[cur].text = tabs[cur].code; ta.value = tabs[cur].code; loadProgram(); });
+
+/* ---------- biblioteca ---------- */
+(function(){
+  const lib = $('lib');
+  tabs.forEach((t, i) => {
+    if (t.group !== 'BIBLIOTECA') return;
+    const d = document.createElement('article'); d.className = 'libcard';
+    d.innerHTML = (t.tpl ? '<div class="tpl" aria-hidden="true">{ }</div>' : '<canvas class="thumb" width="480" height="300" role="img" aria-label="Resultado de ' + esc(t.title) + '"></canvas>') +
+      `<div class="bd"><h3>${esc(t.title)}</h3><div class="fn">${esc(t.file)}</div><p>${esc(t.desc)}</p>
+       <p style="color:var(--dim)"><strong style="color:var(--green-dim)">Aprenderás:</strong> ${esc(t.learn)}</p>
+       <div class="tags">${t.tags.map(x => '<span>' + esc(x) + '</span>').join('')}</div>
+       <div class="acts"><button class="btn sm primary" data-a="open" type="button">Abrir en el laboratorio</button><button class="btn sm" data-a="copy" type="button">⧉ Copiar</button><button class="btn sm" data-a="dl" type="button">⭳ .asm</button></div></div>`;
+    lib.appendChild(d);
+    d.querySelector('[data-a=open]').addEventListener('click', () => { selectTab(i); $('laboratorio').scrollIntoView({behavior: reduce ? 'auto' : 'smooth'}); });
+    d.querySelector('[data-a=copy]').addEventListener('click', e => copyText(t.code, e.currentTarget));
+    d.querySelector('[data-a=dl]').addEventListener('click', () => download(t.file, t.code));
+    const cv = d.querySelector('canvas');
+    if (cv){
+      const p = assemble(t.code);
+      if (p.ok){ const m = new Machine(p); let n = 0; while (m.state === 'ready' && n++ < 20000) m.step(); drawScreen(cv, m.screen, false); }
+    }
+  });
+})();
+
+/* ---------- abrir un programa propio en el laboratorio ---------- */
+function openCustom(title, file, desc, code){
+  let i = tabs.findIndex(t => t.id === 'mio');
+  if (i < 0){ tabs.push({id:'mio', group:'MIO', title, file, desc, code, text:code}); i = tabs.length - 1; }
+  else Object.assign(tabs[i], {title, file, desc, code, text:code});
+  selectTab(i);
+  $('laboratorio').scrollIntoView({behavior: reduce ? 'auto' : 'smooth'});
+}
+
+/* ---------- Tutorial: plantilla ---------- */
+const TEMPLATE = `data segment                ; ===== SEGMENTO DE DATOS =====
+    ; aquí van tus variables, por ejemplo:
+    ; saludo db "Hola$"
+ends
+stack segment               ; ===== SEGMENTO DE PILA =====
+    dw 128 dup(0)           ; 128 palabras (256 bytes) de pila
+ends
+
+code segment                ; ===== SEGMENTO DE CÓDIGO =====
+start:                      ; el programa empieza aquí
+    mov ax, data            ; AX = segmento de datos
+    mov ds, ax              ; DS = AX (siempre al inicio)
+
+    ; ===== TU CÓDIGO VA AQUÍ (este ejemplo pinta un rectángulo; bórralo y escribe el tuyo) =====
+    mov ah, 00              ; INT 10h, función 00h: modo de video
+    mov al, 0               ; modo 0 (texto 40x25)
+    int 10h                 ; limpia la pantalla
+
+    mov ah, 06              ; INT 10h, función 06h: pintar una ventana
+    mov al, 0               ; 0 = pintar toda la ventana
+    mov ch, 08              ; fila superior
+    mov cl, 15              ; columna izquierda
+    mov dh, 16              ; fila inferior
+    mov dl, 23              ; columna derecha
+    mov bh, 0cfh            ; color: fondo C (rojo claro) + texto F
+    int 10h                 ; pinta el rectángulo
+    ; ===== FIN DE TU CÓDIGO =====
+
+    mov ax, 4c00h           ; terminar el programa y devolver el control al sistema
+    int 21h                 ; (para esperar una tecla antes de salir: mov ah, 1 / int 21h)
+ends
+
+ends start                  ; fin; punto de entrada: start
+`;
+(function(){
+  const parts = [
+    {code:'data segment\n    ; aquí van tus variables\nends', t:'1 · Segmento de datos', d:'Aquí se declaran las variables (textos, números). Si tu programa no usa variables, puede quedar casi vacío.'},
+    {code:'stack segment\n    dw 128 dup(0)\nends', t:'2 · Segmento de pila', d:'Reserva 128 palabras (256 bytes) que el procesador usa como memoria temporal, por ejemplo para PUSH, POP y las llamadas a rutinas.'},
+    {code:'code segment\nstart:', t:'3 · Segmento de código', d:'Aquí vive el programa. La etiqueta start: marca dónde empieza a ejecutarse.'},
+    {code:'    mov ax, data\n    mov ds, ax', t:'4 · Preparar DS', d:'DS debe apuntar al segmento de datos. No se puede escribir un valor directo en DS, por eso se pasa por AX. Va siempre al principio.'},
+    {code:'    ; ===== TU CÓDIGO VA AQUÍ =====\n    ...\n    ; ===== FIN DE TU CÓDIGO =====', t:'5 · Tu zona de trabajo', d:'Escribe aquí tus instrucciones. La plantilla trae un ejemplo que pinta un rectángulo: bórralo y escribe el tuyo.', you:true},
+    {code:'    mov ax, 4c00h\n    int 21h', t:'6 · Terminar', d:'Función 4Ch de DOS: devuelve el control al sistema. Sin esto el procesador seguiría ejecutando lo que haya después.'},
+    {code:'ends\n\nends start', t:'7 · Cierre', d:'ends cierra el segmento de código y la última línea indica el punto de entrada (start).'}
+  ];
+  const box = $('anat');
+  parts.forEach(p => {
+    const r = document.createElement('div'); r.className = 'arow' + (p.you ? ' you' : '');
+    r.innerHTML = '<pre class="cblock">' + p.code.split('\n').map(l => '<span class="cl">' + hl(l) + '</span>').join('') + '</pre>' +
+      '<div class="atxt"><strong>' + esc(p.t) + '</strong><p>' + esc(p.d) + '</p></div>';
+    box.appendChild(r);
+  });
+  $('tplCopy').addEventListener('click', e => copyText(TEMPLATE, e.currentTarget));
+  $('tplDl').addEventListener('click', () => download('plantilla.asm', TEMPLATE));
+  $('tplLab').addEventListener('click', () => openCustom('Mi programa', 'mi_programa.asm', 'Tu plantilla lista para editar: escribe tu código entre las marcas y pulsa Ejecutar.', TEMPLATE));
+})();
+
+/* ---------- Ayuda: ayudante de posición y selector de color ---------- */
+(function(){
+  const COLORS = ['Negro','Azul','Verde','Cian','Rojo','Magenta','Marrón','Gris','Gris oscuro','Azul claro','Verde claro','Cian claro','Rojo claro','Magenta claro','Amarillo','Blanco'];
+  const two = n => String(n).padStart(2, '0');
+  const bhStr = v => '0' + hex(v, 2).toLowerCase() + 'h';
+  const sel = $('hpColor');
+  COLORS.forEach((n, i) => { const o = document.createElement('option'); o.value = i; o.textContent = hex(i, 1) + ' · ' + n; sel.appendChild(o); });
+  sel.value = 12;
+  const cv = $('hpCanvas');
+  let current = null;
+
+  function draw(cols, rows, f){
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, mL = 34, mT = 22, gw = W - mL - 6, gh = H - mT - 6;
+    const cw = gw / cols, chh = gh / rows;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#000'; ctx.fillRect(mL, mT, gw, gh);
+    const x0 = Math.max(f.cl, 0), x1 = Math.min(f.dl, cols - 1), y0 = Math.max(f.ch, 0), y1 = Math.min(f.dh, rows - 1);
+    if (x1 >= x0 && y1 >= y0){
+      ctx.fillStyle = PAL[f.color];
+      ctx.fillRect(mL + x0 * cw, mT + y0 * chh, (x1 - x0 + 1) * cw, (y1 - y0 + 1) * chh);
+    }
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= cols; x++){
+      ctx.strokeStyle = x % 5 === 0 ? 'rgba(57,255,106,.38)' : (cols === 40 ? 'rgba(57,255,106,.12)' : 'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.moveTo(mL + x * cw + .5, mT); ctx.lineTo(mL + x * cw + .5, mT + gh); ctx.stroke();
+    }
+    for (let y = 0; y <= rows; y++){
+      ctx.strokeStyle = y % 5 === 0 ? 'rgba(57,255,106,.38)' : 'rgba(57,255,106,.12)';
+      ctx.beginPath(); ctx.moveTo(mL, mT + y * chh + .5); ctx.lineTo(mL + gw, mT + y * chh + .5); ctx.stroke();
+    }
+    ctx.font = '11px ui-monospace, Menlo, Consolas, monospace'; ctx.fillStyle = '#6fa77a';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    for (let x = 0; x < cols; x += 5) ctx.fillText(String(x), mL + (x + .5) * cw, mT - 6);
+    ctx.fillText(String(cols - 1), mL + (cols - .5) * cw, mT - 6 - 0);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let y = 0; y < rows; y += 5) ctx.fillText(String(y), mL - 5, mT + (y + .5) * chh);
+    ctx.fillText(String(rows - 1), mL - 5, mT + (rows - .5) * chh);
+    if (x1 >= x0 && y1 >= y0){
+      ctx.strokeStyle = '#ffb000'; ctx.lineWidth = 2;
+      ctx.strokeRect(mL + x0 * cw + 1, mT + y0 * chh + 1, (x1 - x0 + 1) * cw - 2, (y1 - y0 + 1) * chh - 2);
+      ctx.font = 'bold 12px ui-monospace, Menlo, Consolas, monospace'; ctx.fillStyle = '#ffb000';
+      const lab1 = 'CH,CL = ' + f.ch + ',' + f.cl, lab2 = 'DH,DL = ' + f.dh + ',' + f.dl;
+      const lx = mL + x0 * cw + 4, ly = mT + y0 * chh + 14;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      const bw = (x1 - x0 + 1) * cw;
+      if (bw > 110 && (y1 - y0 + 1) * chh > 44){
+        const lum = parseInt(PAL[f.color].slice(1, 3), 16) * .3 + parseInt(PAL[f.color].slice(3, 5), 16) * .59 + parseInt(PAL[f.color].slice(5, 7), 16) * .11;
+        ctx.fillStyle = lum > 140 ? '#000' : '#fff';
+        ctx.fillText(lab1, lx, ly);
+        ctx.textAlign = 'right'; ctx.fillText(lab2, mL + (x1 + 1) * cw - 4, mT + (y1 + 1) * chh - 6);
+      } else {
+        ctx.fillStyle = '#ffb000'; ctx.textAlign = 'left';
+        ctx.fillText(lab1 + '  →  ' + lab2, mL + 4, mT + gh - 6);
+      }
+    }
+  }
+
+  function calc(){
+    const mode = $('hpMode').value === '0' ? 0 : 3, cols = mode === 0 ? 40 : 80, rows = 25;
+    let w = parseInt($('hpW').value, 10), h = parseInt($('hpH').value, 10);
+    const warn = [];
+    if (isNaN(w) || w < 1) w = 1; if (isNaN(h) || h < 1) h = 1;
+    if (w > cols){ warn.push('El ancho máximo en este modo es ' + cols + '.'); w = cols; }
+    if (h > rows){ warn.push('El alto máximo es ' + rows + '.'); h = rows; }
+    const pos = $('hpPos').value, v = pos[0], hz = pos[1];
+    let cl = hz === 'l' ? 0 : hz === 'c' ? Math.floor((cols - w) / 2) : cols - w;
+    let ch = v === 't' ? 0 : v === 'm' ? Math.floor((rows - h) / 2) : rows - h;
+    cl += parseInt($('hpDX').value, 10) || 0; ch += parseInt($('hpDY').value, 10) || 0;
+    const dl = cl + w - 1, dh = ch + h - 1, color = parseInt($('hpColor').value, 10);
+    const outX = cl < 0 || dl > cols - 1, outY = ch < 0 || dh > rows - 1;
+    if (outX) warn.push('Se sale de la pantalla por los lados: las columnas válidas van de 0 a ' + (cols - 1) + '.');
+    if (outY) warn.push('Se sale de la pantalla por arriba o por abajo: las filas válidas van de 0 a ' + (rows - 1) + '.');
+    const f = {mode, cols, rows, w, h, cl, ch, dl, dh, color, bad: outX || outY};
+    current = f;
+    $('hpNums').innerHTML = [['CH', ch], ['CL', cl], ['DH', dh], ['DL', dl]].map(([n, val]) => '<span class="out' + (f.bad ? ' bad' : '') + '">' + n + ' = <b>' + val + '</b></span>').join('') +
+      '<span class="out">BH = <b>' + bhStr(color * 16 + 15).toUpperCase().replace(/H$/, 'h') + '</b></span>';
+    const mL = cl, mR = cols - 1 - dl, mT = ch, mB = rows - 1 - dh;
+    $('hpInfo').className = 'note' + (warn.length ? ' warn' : '');
+    $('hpInfo').innerHTML = (warn.length ? '⚠ ' + esc(warn.join(' ')) + '<br>' : '') +
+      'Tamaño: ancho = DL − CL + 1 = <strong>' + w + '</strong>, alto = DH − CH + 1 = <strong>' + h + '</strong>. ' +
+      'Márgenes → izquierda: ' + mL + ' · derecha: ' + mR + ' · arriba: ' + mT + ' · abajo: ' + mB + '.' +
+      ((cols - w) % 2 && $('hpPos').value[1] === 'c' ? ' (Sobra 1 columna de un lado: no se puede centrar exacto.)' : '');
+    const lines = [
+      '    mov ah, 00              ; modo de video (una sola vez, al inicio)',
+      '    mov al, ' + mode + '               ; ' + (mode === 0 ? '0 = texto 40x25' : '3 = texto 80x25'),
+      '    int 10h',
+      '',
+      '    ;FIGURA',
+      '    mov ah, 06              ; función 06h: pintar una ventana',
+      '    mov al, 0               ; 0 = pintar toda la ventana',
+      '    mov ch, ' + two(ch) + '              ; fila superior',
+      '    mov cl, ' + two(cl) + '              ; columna izquierda',
+      '    mov dh, ' + two(dh) + '              ; fila inferior',
+      '    mov dl, ' + two(dl) + '              ; columna derecha',
+      '    mov bh, ' + bhStr(color * 16 + 15) + '            ; fondo ' + hex(color, 1) + ' (' + COLORS[color].toLowerCase() + ') + texto F',
+      '    int 10h'
+    ];
+    f.lines = lines;
+    $('hpCode').innerHTML = lines.map(l => '<span class="cl">' + hl(l) + '</span>').join('');
+    draw(cols, rows, f);
+  }
+  ['hpMode','hpW','hpH','hpPos','hpDX','hpDY','hpColor'].forEach(id => { $(id).addEventListener('input', calc); $(id).addEventListener('change', calc); });
+  $('hpMode').addEventListener('change', () => {
+    const cols = $('hpMode').value === '0' ? 40 : 80; $('hpW').max = cols;
+    if (cols === 80 && +$('hpW').value === 10) $('hpW').value = 20;
+    if (cols === 40 && +$('hpW').value === 20) $('hpW').value = 10;
+    calc();
+  });
+  $('hpCopy').addEventListener('click', e => copyText(current.lines.join('\n'), e.currentTarget));
+  $('hpLab').addEventListener('click', () => {
+    const code = 'data segment\n    pkey db " ", "$"\nends\nstack segment\n    dw 128 dup(0)\nends\n\ncode segment\nstart:\n    mov ax, data\n    mov ds, ax\n\n' +
+      current.lines.join('\n') + '\n\n    ret\nends\n\nends start\n';
+    openCustom('Mi figura', 'mi_figura.asm', 'Generado con el ayudante de posición. Cambia los números del código y vuelve a ejecutar.', code);
+  });
+  calc();
+
+  /* selector de color BH */
+  let bg = 12, fg = 15;
+  const lumOf = c => parseInt(c.slice(1, 3), 16) * .3 + parseInt(c.slice(3, 5), 16) * .59 + parseInt(c.slice(5, 7), 16) * .11;
+  const swB = [], swF = [];
+  function mk(box, arr, which){
+    for (let i = 0; i < 16; i++){
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'sw';
+      b.style.background = PAL[i]; b.style.color = lumOf(PAL[i]) > 140 ? '#000' : '#fff';
+      b.textContent = hex(i, 1); b.title = hex(i, 1) + ' · ' + COLORS[i]; b.setAttribute('aria-label', (which === 'bg' ? 'Fondo ' : 'Texto ') + COLORS[i]);
+      b.addEventListener('click', () => { if (which === 'bg') bg = i; else fg = i; upd(); });
+      box.appendChild(b); arr.push(b);
+    }
+  }
+  function upd(){
+    swB.forEach((b, i) => b.classList.toggle('on', i === bg)); swF.forEach((b, i) => b.classList.toggle('on', i === fg));
+    const v = bg * 16 + fg;
+    $('bhVal').textContent = '0' + hex(v, 2) + 'h'; $('bhAsm').textContent = 'mov bh, ' + bhStr(v);
+    const sm = $('bhSample'); sm.style.background = PAL[bg]; sm.style.color = PAL[fg];
+  }
+  mk($('bhBg'), swB, 'bg'); mk($('bhFg'), swF, 'fg'); upd();
+})();
+
+/* ---------- scroll-spy ---------- */
+(function(){
+  const links = [...document.querySelectorAll('.nav a.lk')];
+  const secs = links.map(l => document.querySelector(l.getAttribute('href')));
+  function spy(){
+    let on = -1; const y = window.scrollY + 120;
+    secs.forEach((s, i) => { if (s && s.offsetTop <= y) on = i; });
+    links.forEach((l, i) => l.classList.toggle('on', i === on));
+  }
+  window.addEventListener('scroll', spy, {passive:true}); spy();
+})();
+
+/* cursor parpadeante en pantalla */
+if (!reduce) setInterval(() => { if (!document.hidden){ blink = !blink; drawConsole(); } }, 530);
+else blink = false;
+
+renderTabs(); selectTab(0);
+})();
+</script>
+</body>
+</html>
