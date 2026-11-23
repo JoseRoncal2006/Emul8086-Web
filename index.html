@@ -327,7 +327,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .ppanel .anat .arow{grid-template-columns:minmax(0,1fr)}
 .hp-grid{grid-template-columns:minmax(0,1fr)}
 .hp-ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));column-gap:14px}
-#code{caret-color:transparent!important}
+#code{caret-color:var(--green)!important}
 
 /* registros compactos: dos tablas lado a lado para que la pantalla se vea completa */
 .regs2{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:0 18px}
@@ -414,6 +414,7 @@ table.regs td{padding:1px 6px}
         <h3>Código</h3>
         <div class="tabs" id="tabs" role="tablist" aria-label="Ejemplos" hidden></div>
         <div class="ed-head"><span class="f" id="edFile"></span><span class="spacer"></span>
+          <button class="btn sm" id="btnRestore" type="button" title="Volver al código original de este ejemplo">↺ Restaurar original</button>
           <button class="btn sm" id="btnCopy" type="button">⧉ Copiar</button>
           <button class="btn sm" id="btnDl" type="button">⭳ .asm</button>
         </div>
@@ -422,7 +423,7 @@ table.regs td{padding:1px 6px}
           <div class="gutter" id="gutter" aria-hidden="true"></div>
           <div class="ed-body">
             <div class="backdrop" id="backdrop" aria-hidden="true"></div>
-            <textarea id="code" readonly spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Código ensamblador (solo lectura)"></textarea>
+            <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Código ensamblador (editable)"></textarea>
           </div>
         </div>
         <div class="asm-status" id="asmStatus" aria-live="polite"></div>
@@ -1865,6 +1866,10 @@ function download(name, txt){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt.replace(/\n/g, '\r\n')], {type:'text/plain'}));
   a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+$('btnRestore').addEventListener('click', () => {
+  const t = tabs[cur]; t.text = t.code; ta.value = t.code; ta.scrollTop = 0;
+  buildEditor(); markLines(); stopRun(); loadProgram();
+});
 $('btnCopy').addEventListener('click', e => copyText(ta.value, e.currentTarget));
 $('btnDl').addEventListener('click', () => download(tabs[cur].file, ta.value));
 
