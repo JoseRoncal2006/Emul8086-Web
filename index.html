@@ -1836,6 +1836,24 @@ ta.addEventListener('input', () => {
   stopRun();
 });
 
+/* Enter conserva la sangría de la línea actual; Tab inserta espacios */
+function insertAtCursor(txt){
+  let ok = false;
+  try { ok = document.execCommand('insertText', false, txt); } catch (_){}
+  if (!ok){ ta.setRangeText(txt, ta.selectionStart, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input', {bubbles:true})); }
+}
+ta.addEventListener('keydown', e => {
+  if (e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Enter' && !e.shiftKey){
+    const v = ta.value, pos = ta.selectionStart;
+    const ls = v.lastIndexOf('\n', pos - 1) + 1;
+    const indent = (v.slice(ls, pos).match(/^[ \t]*/) || [''])[0];
+    e.preventDefault(); insertAtCursor('\n' + indent);
+  } else if (e.key === 'Tab' && !e.shiftKey){
+    e.preventDefault(); insertAtCursor('    ');
+  }
+});
+
 /* pestañas */
 function renderTabs(){
   const box = $('tabs'); box.innerHTML = ''; let grp = '';
