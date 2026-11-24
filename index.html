@@ -1771,16 +1771,16 @@ function renderAll(){ markLines(); renderRegs(); renderExplain(); renderStatus()
 
 /* ---------- control ---------- */
 function stopRun(){ running = false; if (timer){ clearTimeout(timer); timer = null; } }
-function loadProgram(){
+function loadProgram(keepView){
   stopRun();
   prog = assemble(ta.value);
   M = prog.ok ? new Machine(prog) : null;
   snapPrev = view().snapshot();
-  buildEditor(); renderAll(); reveal();
+  buildEditor(); renderAll(); if (!keepView) reveal();
 }
 const SPEEDS = {slow:{n:1,d:550}, normal:{n:1,d:160}, fast:{n:3,d:60}, instant:{n:STEP_LIMIT,d:0}};
 function doReset(){ stopRun(); if (!M) return; M.reset(); snapPrev = M.snapshot(); renderAll(); ta.scrollTop = 0; reveal(); }
-function flushLoad(){ if (deb){ clearTimeout(deb); deb = null; loadProgram(); } }
+function flushLoad(){ if (deb){ clearTimeout(deb); deb = null; loadProgram(true); } }
 function doStep(){
   flushLoad();
   if (!M) return;
@@ -1832,7 +1832,7 @@ $('speed').addEventListener('change', () => { if (running){ if (timer) clearTime
 let deb = null;
 ta.addEventListener('input', () => {
   tabs[cur].text = ta.value; buildEditor(); markLines();
-  clearTimeout(deb); deb = setTimeout(() => { deb = null; loadProgram(); }, 160);
+  clearTimeout(deb); deb = setTimeout(() => { deb = null; loadProgram(true); }, 160);
   stopRun();
 });
 
