@@ -465,7 +465,7 @@ table.regs td{padding:1px 6px}
             <button class="subtab" type="button" data-s="col">Color (BH)</button>
             <button class="subtab" type="button" data-s="rec">Recetas</button>
             <button class="subtab" type="button" data-s="ref">INT 10h · 06h</button>
-            <button class="subtab" type="button" data-s="flg">Banderas</button>
+            <button class="subtab" type="button" data-s="ins">ADD y básicas</button>
             <button class="subtab" type="button" data-s="sim">Simulador</button>
           </div>
           <div class="subp" id="sp-pos"><div class="widget helper" id="helper" style="margin-top:0">
@@ -568,27 +568,46 @@ table.regs td{padding:1px 6px}
         </table>
         <p class="note"><strong>Devuelve:</strong> nada. <strong>Efecto:</strong> sube el contenido de la ventana tantas líneas como indique <code>AL</code>; las líneas que quedan libres se llenan con espacios del color de <code>BH</code>. Por eso, con <code>AL = 0</code>, toda la ventana se "borra" con ese color y queda un rectángulo sólido.</p>
       </div></div>
-          <div class="subp" id="sp-flg" hidden><div class="inner"><h3><span class="pre">&gt;</span> Observa las banderas (flags)</h3>
-            <p style="font-size:14px">Las <strong>banderas</strong> guardan información sobre el resultado de la última operación. Las tres básicas:</p>
-            <ul style="font-size:14px;margin:0 0 8px;padding-left:1.2em">
-          <li><code>ZF</code> (cero): vale 1 si el resultado fue 0.</li>
-          <li><code>CF</code> (acarreo): vale 1 si "se llevó" o "se pidió prestado" fuera del tamaño del registro.</li>
-          <li><code>SF</code> (signo): copia el bit más alto del resultado (1 = negativo).</li>
+          <div class="subp" id="sp-ins" hidden><div class="inner">
+        <h3><span class="pre">&gt;</span> ADD: sumar (y mover bloques)</h3>
+        <p style="font-size:14px"><code>add destino, valor</code> suma el valor al destino y deja el resultado <strong>en el destino</strong>. Es la forma de correr un rectángulo sin volver a escribir sus coordenadas.</p>
+        <pre class="cblock">mov cl, 10        ; CL = 10
+add cl, 6         ; CL = 10 + 6 = 16
+add cl, cl        ; CL = 16 + 16 = 32</pre>
+        <h4 style="margin-top:12px">Mover un bloque con ADD</h4>
+        <p style="font-size:14px">Suma <strong>lo mismo a los dos extremos</strong>, así el bloque no cambia de tamaño:</p>
+        <pre class="cblock">add cl, 6         ; columna izquierda + 6
+add dl, 6         ; columna derecha  + 6   → se movió 6 a la derecha
+add ch, 1         ; fila de arriba   + 1
+add dh, 1         ; fila de abajo    + 1   → bajó una fila
+int 10h           ; vuelve a pintar con las nuevas coordenadas</pre>
+        <ul style="font-size:13.5px;margin:10px 0 0;padding-left:1.2em">
+          <li>Los dos lados deben ser del <strong>mismo tamaño</strong>: <code>add cl, 6</code> y <code>add cx, 6</code> sirven; <code>add cx, cl</code> no.</li>
+          <li>Un registro de 8 bits llega hasta 255 (<code>FFh</code>). Si te pasas, vuelve a 0 y se enciende la bandera CF.</li>
+          <li>No se puede sumar de memoria a memoria; uno de los dos debe ser un registro.</li>
         </ul>
-            <div class="widget" style="margin-top:12px">
-          <h4>▸ Prueba las banderas (8 bits)</h4>
-          <label for="fA">A (hex)</label><input id="fA" class="fld" value="FF" maxlength="2" style="width:3.8em" autocomplete="off" spellcheck="false">
-          <select id="fOp" class="fld" aria-label="Operación"><option value="add">ADD</option><option value="sub">SUB</option><option value="cmp">CMP</option></select>
-          <label for="fB">B (hex)</label><input id="fB" class="fld" value="01" maxlength="2" style="width:3.8em" autocomplete="off" spellcheck="false">
-          <div class="outs" aria-live="polite">
-            <span class="out">resultado = <b id="fR">00h</b></span>
-            <span class="out flag" id="fZF">ZF = <b>0</b></span>
-            <span class="out flag" id="fCF">CF = <b>0</b></span>
-            <span class="out flag" id="fSF">SF = <b>0</b></span>
-          </div>
-          <p class="note" id="fWhy"></p>
-        </div>
-          </div></div>
+        <h3 style="margin-top:18px"><span class="pre">&gt;</span> Otras instrucciones básicas</h3>
+        <table class="cmp">
+          <tr><th>Instrucción</th><th>Qué hace</th><th>Ejemplo</th></tr>
+          <tr><td><code>mov</code></td><td>Copia un valor al destino</td><td><code>mov bh, 077h</code></td></tr>
+          <tr><td><code>add</code></td><td>Suma al destino</td><td><code>add dl, 6</code></td></tr>
+          <tr><td><code>sub</code></td><td>Resta al destino (para ir a la izquierda o arriba)</td><td><code>sub cl, 4</code></td></tr>
+          <tr><td><code>inc</code></td><td>Suma 1</td><td><code>inc ch</code></td></tr>
+          <tr><td><code>dec</code></td><td>Resta 1</td><td><code>dec dh</code></td></tr>
+          <tr><td><code>cmp</code></td><td>Compara dos valores sin guardar nada</td><td><code>cmp ch, 20</code></td></tr>
+          <tr><td><code>jne / je</code></td><td>Salta a una etiqueta si no son / si son iguales (después de <code>cmp</code>)</td><td><code>jne fila</code></td></tr>
+          <tr><td><code>loop</code></td><td>Resta 1 a <code>CX</code> y repite hasta que llegue a 0</td><td><code>loop fila</code></td></tr>
+          <tr><td><code>int</code></td><td>Llama a un servicio (pintar, leer tecla…)</td><td><code>int 10h</code></td></tr>
+        </table>
+        <h4 style="margin-top:12px">Repetir con loop</h4>
+        <pre class="cblock">    mov cx, 5         ; repetir 5 veces
+fila:
+    int 10h           ; pinta
+    add ch, 2         ; baja 2 filas
+    add dh, 2
+    loop fila         ; CX = CX - 1; si CX no es 0, vuelve a fila</pre>
+        <p class="note">Para verlo: abre el ejemplo <strong>Bandera con bucles</strong>, ejecútalo paso a paso (F8) y mira cómo cambian <code>CH</code> y <code>DH</code> en cada <code>add</code>.</p>
+      </div></div>
           <div class="subp" id="sp-sim" hidden><div class="inner"><h3><span class="pre">&gt;</span> Qué entiende este simulador</h3><div class="in">
         <table class="cmp">
           <tr><th>Interrupción</th><th>AH</th><th>Qué hace</th></tr>
@@ -1561,28 +1580,6 @@ const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)
   })();
 })();
 
-/* ---------- Demo de banderas ---------- */
-(function(){
-  const h = s => { const v = parseInt((s||'').replace(/[^0-9a-f]/gi,''), 16); return isNaN(v) ? 0 : v; };
-  // banderas
-  const fA = $('fA'), fB = $('fB'), fOp = $('fOp');
-  function fl(){
-    const a = h(fA.value) & 255, b = h(fB.value) & 255, op = fOp.value;
-    let full, r;
-    if (op === 'add'){ full = a + b; r = full & 255; var cf = full > 255 ? 1 : 0; }
-    else { r = (a - b) & 255; cf = a < b ? 1 : 0; }
-    const zf = r === 0 ? 1 : 0, sf = (r & 128) ? 1 : 0;
-    $('fR').textContent = (op === 'cmp' ? 'no se guarda ' : '') + hex(r, 2) + 'h';
-    [['fZF','ZF',zf],['fCF','CF',cf],['fSF','SF',sf]].forEach(([id,n,v]) => { const e = $(id); e.innerHTML = n + ' = <b>' + v + '</b>'; e.classList.toggle('on', !!v); });
-    const why = [];
-    why.push(zf ? 'ZF=1: el resultado es 0.' : 'ZF=0: el resultado no es 0.');
-    why.push(cf ? (op === 'add' ? 'CF=1: la suma pasó de FFh (hubo acarreo).' : 'CF=1: A es menor que B (hubo préstamo).') : 'CF=0: no hubo acarreo/préstamo.');
-    why.push(sf ? 'SF=1: el bit más alto del resultado es 1 (negativo en complemento a 2).' : 'SF=0: el bit más alto es 0.');
-    $('fWhy').textContent = why.join(' ');
-  }
-  [fA, fB].forEach(e => e.addEventListener('input', fl)); fOp.addEventListener('change', fl); fl();
-})();
-
 /* ---------- Pantalla (canvas) ---------- */
 function drawScreen(cv, scr, cursorOn){
   const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, cw = W / scr.cols, chh = H / scr.rows;
@@ -2085,7 +2082,7 @@ function setPanel(p){
 document.querySelectorAll('#ptabs .ptab').forEach(b => b.addEventListener('click', () => setPanel(b.dataset.p)));
 function setSub(sname){
   document.querySelectorAll('#subtabs .subtab').forEach(b => b.classList.toggle('on', b.dataset.s === sname));
-  ['pos', 'col', 'rec', 'ref', 'flg', 'sim'].forEach(n => { $('sp-' + n).hidden = n !== sname; });
+  ['pos', 'col', 'rec', 'ref', 'ins', 'sim'].forEach(n => { $('sp-' + n).hidden = n !== sname; });
 }
 document.querySelectorAll('#subtabs .subtab').forEach(b => b.addEventListener('click', () => setSub(b.dataset.s)));
 $('goTpl').addEventListener('click', () => { const i = tabs.findIndex(t => t.id === 'plantilla'); if (i >= 0 && i !== cur) selectTab(i); });
